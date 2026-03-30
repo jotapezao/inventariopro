@@ -1,7 +1,7 @@
 const db = require('../database/db');
 
 // Criar novo produto
-exports.createProduct = (req, res) => {
+exports.createProduct = async (req, res) => {
   const { nome, categoria, codigo, quantidade, unidade, localizacao } = req.body;
   const foto = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
@@ -9,85 +9,103 @@ exports.createProduct = (req, res) => {
     return res.status(400).json({ message: 'Campos obrigatórios: nome, categoria, unidade.' });
   }
 
-  const query = `
-    INSERT INTO Produtos (nome, categoria, codigo, quantidade, unidade, localizacao, foto) 
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `;
+  try {
+    const query = `
+      INSERT INTO Produtos (nome, categoria, codigo, quantidade, unidade, localizacao, foto) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `;
 
-  db.run(query, [nome, categoria, codigo || '', quantidade || 0, unidade, localizacao, foto], function (err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(201).json({ message: 'Produto cadastrado com sucesso', id: this.lastID, foto });
-  });
+    const result = await db.query(query, [
+      nome, 
+      categoria, 
+      codigo || '', 
+      quantidade || 0, 
+      unidade, 
+      localizacao, 
+      foto
+    ]);
+    
+    res.status(201).json({ message: 'Produto cadastrado com sucesso', id: result.rows[0].id, foto });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 // Listar produtos
-exports.getProducts = (req, res) => {
+exports.getProducts = async (req, res) => {
   const { busca, categoria } = req.query;
   
   let query = 'SELECT * FROM Produtos WHERE 1=1';
   let params = [];
+  let paramIdx = 1;
 
   if (busca) {
-    query += ' AND (nome LIKE ? OR codigo LIKE ?)';
+    query += ` AND (nome ILIKE $${paramIdx} OR codigo ILIKE $${paramIdx+1})`;
     params.push(`%${busca}%`, `%${busca}%`);
+    paramIdx += 2;
   }
   
   if (categoria) {
-    query += ' AND categoria = ?';
+    query += ` AND categoria = $${paramIdx}`;
     params.push(categoria);
+    paramIdx++;
   }
 
   query += ' ORDER BY id DESC';
 
-  db.all(query, params, (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+  try {
+    const result = await db.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 // Detalhes de um produto
-exports.getProductById = (req, res) => {
-  db.get('SELECT * FROM Produtos WHERE id = ?', [req.params.id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ message: 'Produto não encontrado.' });
-    res.json(row);
-  });
+exports.getProductById = async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM Produtos WHERE id = $1', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Produto não encontrado.' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 // Atualizar produto
-exports.updateProduct = (req, res) => {
+exports.updateProduct = async (req, res) => {
   const { id } = req.params;
   const { nome, categoria, codigo, unidade, localizacao } = req.body;
   const foto = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
-  db.get('SELECT foto FROM Produtos WHERE id = ?', [id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ message: 'Produto não encontrado.' });
+  try {
+    const checkProduct = await db.query('SELECT foto FROM Produtos WHERE id = $1', [id]);
+    if (checkProduct.rows.length === 0) return res.status(404).json({ message: 'Produto não encontrado.' });
     
-    let finalFoto = foto || row.foto;
+    let finalFoto = foto || checkProduct.rows[0].foto;
 
     const query = `
       UPDATE Produtos 
-      SET nome = ?, categoria = ?, codigo = ?, unidade = ?, localizacao = ?, foto = ?
-      WHERE id = ?
+      SET nome = $1, categoria = $2, codigo = $3, unidade = $4, localizacao = $5, foto = $6
+      WHERE id = $7
     `;
 
-    db.run(query, [nome, categoria, codigo, unidade, localizacao, finalFoto, id], function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: 'Produto atualizado com sucesso.' });
-    });
-  });
+    await db.query(query, [nome, categoria, codigo, unidade, localizacao, finalFoto, id]);
+    res.json({ message: 'Produto atualizado com sucesso.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 // Excluir produto
-exports.deleteProduct = (req, res) => {
+exports.deleteProduct = async (req, res) => {
   const { id } = req.params;
-  // Idealmente, deletar também a foto física do disco aqui.
-  db.run('DELETE FROM Produtos WHERE id = ?', [id], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    if (this.changes === 0) return res.status(404).json({ message: 'Produto não encontrado.' });
+  try {
+    const result = await db.query('DELETE FROM Produtos WHERE id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Produto não encontrado.' });
     res.json({ message: 'Produto excluído com sucesso.' });
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

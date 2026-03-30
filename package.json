@@ -1,0 +1,12 @@
+{
+  "name": "inventariopro-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "start:backend": "cd backend && npm start",
+    "build:frontend": "cd frontend && npm run build"
+  }
+}

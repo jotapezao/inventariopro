@@ -1,56 +1,51 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
+require('dotenv').config();
 
-const dbPath = path.resolve(__dirname, 'inventario.sqlite');
-
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Erro ao conectar ao banco de dados:', err.message);
-  } else {
-    console.log('Conectado ao banco de dados SQLite.');
-    createTables();
-  }
+// Configuração do Pool de conexão (Railway fornece DATABASE_URL)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-function createTables() {
-  db.serialize(() => {
+const createTables = async () => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
     // Tabela Usuarios
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS Usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         nome TEXT NOT NULL,
         usuario TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
         senha TEXT NOT NULL,
         tipo TEXT NOT NULL,
-        data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
+        data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
     // Tabela Categorias
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS Categorias (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         nome TEXT UNIQUE NOT NULL
       )
-    `, (err) => {
-      if (!err) {
-        // Inserir categorias padrão se a tabela estiver vazia
-        db.get("SELECT COUNT(*) as count FROM Categorias", (err, row) => {
-          if (row && row.count === 0) {
-            const defaultCategories = ['Elétrica', 'Hidráulica', 'Construção', 'Ferramentas', 'Outros'];
-            const stmt = db.prepare("INSERT INTO Categorias (nome) VALUES (?)");
-            defaultCategories.forEach(cat => stmt.run(cat));
-            stmt.finalize();
-          }
-        });
+    `);
+
+    // Inserir categorias padrão se a tabela estiver vazia
+    const catCheck = await client.query("SELECT COUNT(*) FROM Categorias");
+    if (parseInt(catCheck.rows[0].count) === 0) {
+      const defaultCategories = ['Elétrica', 'Hidráulica', 'Construção', 'Ferramentas', 'Outros'];
+      for (const cat of defaultCategories) {
+        await client.query("INSERT INTO Categorias (nome) VALUES ($1)", [cat]);
       }
-    });
+    }
 
     // Tabela Produtos
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS Produtos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         nome TEXT NOT NULL,
         categoria TEXT NOT NULL,
         codigo TEXT,
@@ -58,51 +53,60 @@ function createTables() {
         unidade TEXT NOT NULL,
         localizacao TEXT,
         foto TEXT,
-        data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP
+        data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
     // Tabela Movimentacoes
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS Movimentacoes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        produto_id INTEGER NOT NULL,
+        id SERIAL PRIMARY KEY,
+        produto_id INTEGER NOT NULL REFERENCES Produtos(id) ON DELETE CASCADE,
         tipo TEXT NOT NULL CHECK(tipo IN ('entrada', 'saida')),
         quantidade INTEGER NOT NULL,
-        usuario_id INTEGER NOT NULL,
-        data DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (produto_id) REFERENCES Produtos (id),
-        FOREIGN KEY (usuario_id) REFERENCES Usuarios (id)
+        usuario_id INTEGER NOT NULL REFERENCES Usuarios(id),
+        data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
     // Tabela Solicitacoes
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS Solicitacoes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario_id INTEGER NOT NULL,
+        id SERIAL PRIMARY KEY,
+        usuario_id INTEGER NOT NULL REFERENCES Usuarios(id),
         status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente', 'aprovada', 'rejeitada')),
         observacao TEXT,
-        data_solicitacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-        data_aprovacao DATETIME,
-        aprovado_por INTEGER,
-        FOREIGN KEY (usuario_id) REFERENCES Usuarios (id),
-        FOREIGN KEY (aprovado_por) REFERENCES Usuarios (id)
+        data_solicitacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        data_aprovacao TIMESTAMP,
+        aprovado_por INTEGER REFERENCES Usuarios(id)
       )
     `);
 
     // Tabela ItensSolicitacao
-    db.run(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS ItensSolicitacao (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        solicitacao_id INTEGER NOT NULL,
-        produto_id INTEGER NOT NULL,
-        quantidade INTEGER NOT NULL,
-        FOREIGN KEY (solicitacao_id) REFERENCES Solicitacoes (id),
-        FOREIGN KEY (produto_id) REFERENCES Produtos (id)
+        id SERIAL PRIMARY KEY,
+        solicitacao_id INTEGER NOT NULL REFERENCES Solicitacoes(id) ON DELETE CASCADE,
+        produto_id INTEGER NOT NULL REFERENCES Produtos(id) ON DELETE CASCADE,
+        quantidade INTEGER NOT NULL
       )
     `);
-  });
-}
 
-module.exports = db;
+    await client.query('COMMIT');
+    console.log('Tabelas PostgreSQL verificadas/criadas com sucesso.');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error('Erro ao criar tabelas:', e);
+    throw e;
+  } finally {
+    client.release();
+  }
+};
+
+// Inicializa as tabelas na primeira execução
+createTables().catch(err => console.error(err));
+
+module.exports = {
+  query: (text, params) => pool.query(text, params),
+  pool
+};
