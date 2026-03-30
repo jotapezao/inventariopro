@@ -67,7 +67,7 @@ export default function Dashboard() {
          </div>
        ) : (
          <div className="bg-white rounded-lg shadow overflow-hidden">
-           {products.length === 0 ? (
+           {(!products || products.length === 0) ? (
              <div className="p-8 text-center text-gray-500">
                 Nenhum produto encontrado.
              </div>

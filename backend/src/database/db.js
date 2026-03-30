@@ -25,17 +25,15 @@ const createTables = async () => {
       )
     `);
 
-    // Inserir Admin inicial se a tabela estiver vazia
-    const userCheck = await client.query("SELECT COUNT(*) FROM Usuarios");
-    if (parseInt(userCheck.rows[0].count) === 0) {
-      const bcrypt = require('bcrypt');
-      const hashedPass = await bcrypt.hash('admin', 10);
-      await client.query(
-        'INSERT INTO Usuarios (nome, usuario, email, senha, tipo) VALUES ($1, $2, $3, $4, $5)',
-        ['Administrador', 'admin', 'admin@sistema.com', hashedPass, 'Administrador']
-      );
-      console.log('Usuário admin inicial criado: admin / admin');
-    }
+    // Inserir Admin inicial (UPSERT)
+    const bcrypt = require('bcrypt');
+    const hashedPass = await bcrypt.hash('admin', 10);
+    await client.query(`
+      INSERT INTO Usuarios (nome, usuario, email, senha, tipo) 
+      VALUES ('Administrador', 'admin', 'admin@sistema.com', $1, 'Administrador')
+      ON CONFLICT (usuario) DO NOTHING
+    `, [hashedPass]);
+    console.log('Verificação de usuário admin concluída.');
 
     // Tabela Categorias
     await client.query(`
