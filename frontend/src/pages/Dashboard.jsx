@@ -90,7 +90,7 @@ export default function Dashboard() {
                          <div className="flex items-center">
                            <div className="flex-shrink-0 h-10 w-10 relative">
                               {product.foto ? (
-                                <img className="h-10 w-10 rounded object-cover" src={`http://localhost:5000/${product.foto}`} alt={product.nome} />
+                                <img className="h-10 w-10 rounded object-cover" src={`/${product.foto}`} alt={product.nome} />
                               ) : (
                                 <div className="h-10 w-10 rounded bg-gray-200 flex items-center justify-center text-gray-500">
                                    <FileBox size={20}/>
