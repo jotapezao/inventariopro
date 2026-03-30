@@ -35,7 +35,7 @@ exports.login = async (req, res) => {
 };
 
 // Criar Administrador Inicial (Configuração)
-exports.setupAdmin = async (req, res) => {
+exports.setupInitialAdmin = async (req, res) => {
   try {
     const check = await db.query('SELECT * FROM Usuarios WHERE usuario = $1', ['admin']);
     if (check.rows.length > 0) {
