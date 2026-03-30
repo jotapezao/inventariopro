@@ -34,7 +34,7 @@ app.use('/api/solicitacoes', solicitationRoutes);
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // Qualquer rota que não seja API deve retornar o index.html (SPA routing)
-app.get('*', (req, res) => {
+app.get('/*', (req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   }

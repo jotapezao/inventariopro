@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-console.log('Auth controller loaded:', Object.keys(authController));
-
 const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
 
 router.post('/login', authController.login);
