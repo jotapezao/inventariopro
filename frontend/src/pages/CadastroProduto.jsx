@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 export default function CadastroProduto() {
   const defaultFormData = {
     nome: '',
-    categoria: '',
+    categoria_id: '',
     codigo: '',
     quantidade: '0',
     unidade: 'unidade',
@@ -152,10 +152,10 @@ export default function CadastroProduto() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Categoria *</label>
-            <select name="categoria" value={formData.categoria} onChange={handleInputChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <select name="categoria_id" value={formData.categoria_id} onChange={handleInputChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
               <option value="">Selecione...</option>
               {categories.map(cat => (
-                <option key={cat.id} value={cat.nome}>{cat.nome}</option>
+                <option key={cat.id} value={cat.id}>{cat.nome}</option>
               ))}
             </select>
           </div>

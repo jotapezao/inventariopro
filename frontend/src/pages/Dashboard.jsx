@@ -104,7 +104,7 @@ export default function Dashboard() {
                          </div>
                        </td>
                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.codigo}</td>
-                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.categoria}</td>
+                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.categoria_nome || 'Sem Categoria'}</td>
                        <td className="px-6 py-4 whitespace-nowrap">
                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.quantidade > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                            {product.quantidade} {product.unidade}

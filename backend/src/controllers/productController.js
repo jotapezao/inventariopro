@@ -2,23 +2,23 @@ const db = require('../database/db');
 
 // Criar novo produto
 exports.createProduct = async (req, res) => {
-  const { nome, categoria, codigo, quantidade, unidade, localizacao } = req.body;
+  const { nome, categoria_id, codigo, quantidade, unidade, localizacao } = req.body;
   const foto = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
-  if (!nome || !categoria || !unidade) {
+  if (!nome || !categoria_id || !unidade) {
     return res.status(400).json({ message: 'Campos obrigatórios: nome, categoria, unidade.' });
   }
 
   try {
     const query = `
-      INSERT INTO Produtos (nome, categoria, codigo, quantidade, unidade, localizacao, foto) 
+      INSERT INTO Produtos (nome, categoria_id, codigo, quantidade, unidade, localizacao, foto) 
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `;
 
     const result = await db.query(query, [
       nome, 
-      categoria, 
+      categoria_id, 
       codigo || '', 
       quantidade || 0, 
       unidade, 
@@ -36,23 +36,28 @@ exports.createProduct = async (req, res) => {
 exports.getProducts = async (req, res) => {
   const { busca, categoria } = req.query;
   
-  let query = 'SELECT * FROM Produtos WHERE 1=1';
+  let query = `
+    SELECT p.*, c.nome as categoria_nome 
+    FROM Produtos p
+    LEFT JOIN Categorias c ON p.categoria_id = c.id
+    WHERE 1=1
+  `;
   let params = [];
   let paramIdx = 1;
 
   if (busca) {
-    query += ` AND (nome ILIKE $${paramIdx} OR codigo ILIKE $${paramIdx+1})`;
+    query += ` AND (p.nome ILIKE $${paramIdx} OR p.codigo ILIKE $${paramIdx+1})`;
     params.push(`%${busca}%`, `%${busca}%`);
     paramIdx += 2;
   }
   
   if (categoria) {
-    query += ` AND categoria = $${paramIdx}`;
+    query += ` AND p.categoria_id = $${paramIdx}`;
     params.push(categoria);
     paramIdx++;
   }
 
-  query += ' ORDER BY id DESC';
+  query += ' ORDER BY p.id DESC';
 
   try {
     const result = await db.query(query, params);
@@ -87,11 +92,11 @@ exports.updateProduct = async (req, res) => {
 
     const query = `
       UPDATE Produtos 
-      SET nome = $1, categoria = $2, codigo = $3, unidade = $4, localizacao = $5, foto = $6
+      SET nome = $1, categoria_id = $2, codigo = $3, unidade = $4, localizacao = $5, foto = $6
       WHERE id = $7
     `;
 
-    await db.query(query, [nome, categoria, codigo, unidade, localizacao, finalFoto, id]);
+    await db.query(query, [nome, categoria_id, codigo, unidade, localizacao, finalFoto, id]);
     res.json({ message: 'Produto atualizado com sucesso.' });
   } catch (err) {
     res.status(500).json({ error: err.message });

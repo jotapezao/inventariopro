@@ -57,7 +57,7 @@ const createTables = async () => {
       CREATE TABLE IF NOT EXISTS Produtos (
         id SERIAL PRIMARY KEY,
         nome TEXT NOT NULL,
-        categoria TEXT NOT NULL,
+        categoria_id INTEGER REFERENCES Categorias(id),
         codigo TEXT,
         quantidade INTEGER DEFAULT 0,
         unidade TEXT NOT NULL,
