@@ -4,7 +4,7 @@ const authController = require('../controllers/authController');
 const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
 
 router.post('/login', authController.login);
-router.post('/setup-initial-admin', authController.setupInitialAdmin);
+router.post('/setup-initial-admin', authController.setupAdmin);
 
 // Rotas protegidas (Apenas Admin)
 router.get('/usuarios', verifyToken, isAdmin, authController.getUsers);
