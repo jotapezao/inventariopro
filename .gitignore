@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Database
+backend/src/database/inventario.sqlite
+
+# Environment
+.env
+
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Frontend build
+frontend/dist/
+frontend/node_modules/
