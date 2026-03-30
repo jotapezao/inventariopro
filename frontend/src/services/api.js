@@ -13,5 +13,16 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.status, error.message);
+    if (error.response?.status === 401) {
+       localStorage.removeItem('@Inventario:token');
+       localStorage.removeItem('@Inventario:user');
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

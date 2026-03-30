@@ -11,8 +11,13 @@ export function AuthProvider({ children }) {
     const storagedUser = localStorage.getItem('@Inventario:user');
     const storagedToken = localStorage.getItem('@Inventario:token');
 
-    if (storagedToken && storagedUser) {
-      setUser(JSON.parse(storagedUser));
+    try {
+      if (storagedToken && storagedUser) {
+        setUser(JSON.parse(storagedUser));
+      }
+    } catch (e) {
+      localStorage.removeItem('@Inventario:token');
+      localStorage.removeItem('@Inventario:user');
     }
     setLoading(false);
   }, []);
