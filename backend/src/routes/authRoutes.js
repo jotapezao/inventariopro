@@ -9,6 +9,8 @@ router.post('/setup-initial-admin', authController.setupInitialAdmin);
 // Rotas protegidas (Apenas Admin)
 router.get('/usuarios', verifyToken, isAdmin, authController.getUsers);
 router.post('/register', verifyToken, isAdmin, authController.register);
+router.put('/usuarios/:id/senha', verifyToken, isAdmin, authController.changePassword);
 router.delete('/usuarios/:id', verifyToken, isAdmin, authController.deleteUser);
+
 
 module.exports = router;

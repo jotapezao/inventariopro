@@ -78,6 +78,25 @@ exports.register = async (req, res) => {
   }
 };
 
+exports.changePassword = async (req, res) => {
+  const { id } = req.params;
+  const { novaSenha } = req.body;
+  if (!novaSenha || novaSenha.length < 4) {
+    return res.status(400).json({ message: 'A nova senha deve ter ao menos 4 caracteres.' });
+  }
+  try {
+    const hashedPass = await bcrypt.hash(novaSenha, 10);
+    const result = await db.query(
+      'UPDATE Usuarios SET senha = $1 WHERE id = $2',
+      [hashedPass, id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ message: 'Usuário não encontrado.' });
+    res.json({ message: 'Senha alterada com sucesso.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.deleteUser = async (req, res) => {
   const { id } = req.params;
   try {

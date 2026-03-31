@@ -1,22 +1,101 @@
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
-import { Users, AlertCircle, Trash2, UserPlus, CheckCircle, XCircle, Tag, Layers, ChevronDown } from 'lucide-react';
+import {
+  Users, AlertCircle, Trash2, UserPlus, CheckCircle,
+  XCircle, Tag, Layers, ChevronDown, KeyRound, Eye, EyeOff, X, Plus
+} from 'lucide-react';
 
+// ─── Componente de Modal de Troca de Senha ───
+function PasswordModal({ user: targetUser, onClose, onSuccess, showMsg }) {
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmar, setConfirmar] = useState('');
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (novaSenha !== confirmar) return showMsg('error', 'As senhas não coincidem.');
+    if (novaSenha.length < 4) return showMsg('error', 'A senha deve ter ao menos 4 caracteres.');
+    setLoading(true);
+    try {
+      await api.put(`/auth/usuarios/${targetUser.id}/senha`, { novaSenha });
+      showMsg('success', `Senha de "${targetUser.nome}" alterada com sucesso!`);
+      onClose();
+    } catch (err) {
+      showMsg('error', err.response?.data?.message || 'Erro ao alterar senha.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6" style={{ backgroundColor: 'var(--bg-card)' }} onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-main)' }}>
+            <KeyRound size={20} className="text-blue-600" /> Trocar Senha — {targetUser.nome}
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-red-500 transition"><X size={20} /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-sub)' }}>Nova Senha</label>
+            <div className="relative">
+              <input
+                type={show ? 'text' : 'password'}
+                value={novaSenha}
+                onChange={e => setNovaSenha(e.target.value)}
+                required
+                placeholder="Mínimo 4 caracteres"
+                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-main)', borderColor: 'var(--border)' }}
+              />
+              <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-2.5 text-gray-400">
+                {show ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-sub)' }}>Confirmar Senha</label>
+            <input
+              type={show ? 'text' : 'password'}
+              value={confirmar}
+              onChange={e => setConfirmar(e.target.value)}
+              required
+              placeholder="Repita a senha"
+              className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              style={{ backgroundColor: 'var(--input-bg)', color: 'var(--text-main)', borderColor: 'var(--border)' }}
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white rounded-lg py-2.5 font-bold hover:bg-blue-700 disabled:opacity-50 transition">
+              {loading ? 'Salvando...' : 'Salvar Nova Senha'}
+            </button>
+            <button type="button" onClick={onClose} className="flex-1 border rounded-lg py-2.5 font-bold hover:bg-gray-50 transition"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-sub)' }}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Componente Principal ───
 export default function Configuracoes() {
   const { user } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [tipos, setTipos] = useState([]);
 
-  // Usuário
   const [showUserForm, setShowUserForm] = useState(false);
+  const [passwordModal, setPasswordModal] = useState(null); // { id, nome }
   const [newUser, setNewUser] = useState({ nome: '', usuario: '', email: '', senha: '', tipo: 'Funcionário' });
 
-  // Categoria
   const [newCategoryName, setNewCategoryName] = useState('');
 
-  // Tipo
   const [selectedCatForTipo, setSelectedCatForTipo] = useState('');
   const [newTipoName, setNewTipoName] = useState('');
 
@@ -24,39 +103,27 @@ export default function Configuracoes() {
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    if (user?.tipo === 'Administrador') {
-      loadData();
-    }
+    if (user?.tipo === 'Administrador') loadData();
   }, [user]);
 
   useEffect(() => {
-    if (selectedCatForTipo) {
-      loadTipos(selectedCatForTipo);
-    } else {
-      setTipos([]);
-    }
+    if (selectedCatForTipo) loadTipos(selectedCatForTipo);
+    else setTipos([]);
   }, [selectedCatForTipo]);
 
   const loadData = async () => {
     try {
-      const [usersRes, catRes] = await Promise.all([
-        api.get('/auth/usuarios'),
-        api.get('/categorias')
-      ]);
+      const [usersRes, catRes] = await Promise.all([api.get('/auth/usuarios'), api.get('/categorias')]);
       setUsers(usersRes.data);
       setCategories(catRes.data);
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-    }
+    } catch (e) { console.error(e); }
   };
 
-  const loadTipos = async (categoria_id) => {
+  const loadTipos = async (catId) => {
     try {
-      const res = await api.get(`/tipos?categoria_id=${categoria_id}`);
+      const res = await api.get(`/tipos?categoria_id=${catId}`);
       setTipos(res.data);
-    } catch (error) {
-      console.error("Erro ao carregar tipos:", error);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const showMsg = (type, text) => {
@@ -64,7 +131,7 @@ export default function Configuracoes() {
     setTimeout(() => setMessage({ type: '', text: '' }), 4000);
   };
 
-  // Usuários
+  // ─── Usuários ───
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -74,11 +141,9 @@ export default function Configuracoes() {
       setNewUser({ nome: '', usuario: '', email: '', senha: '', tipo: 'Funcionário' });
       setShowUserForm(false);
       loadData();
-    } catch (error) {
-      showMsg('error', error.response?.data?.message || 'Erro ao criar usuário.');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) {
+      showMsg('error', err.response?.data?.message || 'Erro ao criar usuário.');
+    } finally { setLoading(false); }
   };
 
   const handleDeleteUser = async (id) => {
@@ -87,12 +152,10 @@ export default function Configuracoes() {
       await api.delete(`/auth/usuarios/${id}`);
       showMsg('success', 'Usuário excluído!');
       loadData();
-    } catch (error) {
-      showMsg('error', error.response?.data?.message || 'Erro ao excluir.');
-    }
+    } catch (err) { showMsg('error', err.response?.data?.message || 'Erro ao excluir.'); }
   };
 
-  // Categorias
+  // ─── Categorias ───
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
     try {
@@ -100,24 +163,20 @@ export default function Configuracoes() {
       setNewCategoryName('');
       loadData();
       showMsg('success', 'Categoria adicionada!');
-    } catch (error) {
-      showMsg('error', error.response?.data?.message || 'Erro ao adicionar categoria.');
-    }
+    } catch (err) { showMsg('error', err.response?.data?.message || 'Erro ao adicionar categoria.'); }
   };
 
   const handleDeleteCategory = async (id) => {
-    if (!window.confirm('Excluir esta categoria também removerá todos os Tipos vinculados. Continuar?')) return;
+    if (!window.confirm('Excluir esta categoria? Os Tipos vinculados também serão removidos.')) return;
     try {
       await api.delete(`/categorias/${id}`);
+      if (String(selectedCatForTipo) === String(id)) setSelectedCatForTipo('');
       loadData();
-      if (selectedCatForTipo == id) setSelectedCatForTipo('');
       showMsg('success', 'Categoria excluída!');
-    } catch (error) {
-      showMsg('error', error.response?.data?.message || 'Erro ao excluir categoria.');
-    }
+    } catch (err) { showMsg('error', err.response?.data?.message || 'Erro ao excluir categoria.'); }
   };
 
-  // Tipos
+  // ─── Tipos ───
   const handleAddTipo = async () => {
     if (!newTipoName.trim() || !selectedCatForTipo) return;
     try {
@@ -125,103 +184,124 @@ export default function Configuracoes() {
       setNewTipoName('');
       loadTipos(selectedCatForTipo);
       showMsg('success', 'Tipo adicionado!');
-    } catch (error) {
-      showMsg('error', error.response?.data?.message || 'Erro ao adicionar tipo.');
-    }
+    } catch (err) { showMsg('error', err.response?.data?.message || 'Erro ao adicionar tipo.'); }
   };
 
   const handleDeleteTipo = async (id) => {
     try {
       await api.delete(`/tipos/${id}`);
       loadTipos(selectedCatForTipo);
-      showMsg('success', 'Tipo excluído!');
-    } catch (error) {
-      showMsg('error', error.response?.data?.message || 'Erro ao excluir tipo.');
-    }
+    } catch (err) { showMsg('error', err.response?.data?.message || 'Erro ao excluir tipo.'); }
   };
 
   if (user?.tipo !== 'Administrador') {
     return (
       <div className="flex flex-col items-center justify-center p-10 text-center">
         <AlertCircle size={48} className="text-red-500 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-800">Acesso Negado</h2>
-        <p className="text-gray-600 mt-2">Você precisa ser um administrador para acessar as configurações.</p>
+        <h2 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Acesso Negado</h2>
+        <p style={{ color: 'var(--text-sub)' }} className="mt-2">Você precisa ser um administrador para acessar as configurações.</p>
       </div>
     );
   }
 
+  const cardCls = "rounded-xl shadow-sm border p-6";
+  const cardStyle = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' };
+  const inputCls = "w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition";
+  const inputStyle = { backgroundColor: 'var(--input-bg)', color: 'var(--text-main)', borderColor: 'var(--border)' };
+
   return (
     <div className="max-w-6xl mx-auto pb-10">
+      {/* Cabeçalho */}
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-800 flex items-center">
-          <Users className="mr-3 text-blue-600" /> Configurações do Sistema
+        <h2 className="text-2xl font-bold flex items-center gap-3" style={{ color: 'var(--text-main)' }}>
+          <Users className="text-blue-600" /> Configurações do Sistema
         </h2>
         {message.text && (
-          <div className={`px-4 py-2 rounded-md flex items-center shadow-sm ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {message.type === 'success' ? <CheckCircle size={18} className="mr-2" /> : <XCircle size={18} className="mr-2" />}
+          <div className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {message.type === 'success' ? <CheckCircle size={16} /> : <XCircle size={16} />}
             {message.text}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
 
-        {/* Gestão de Usuários */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-              <h3 className="text-lg font-bold text-gray-800">Gestão de Usuários</h3>
+        {/* ─── Gestão de Usuários (col 3) ─── */}
+        <div className="xl:col-span-3 space-y-4">
+          <div className={cardCls} style={cardStyle}>
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-main)' }}>
+                <Users size={20} className="text-blue-600" /> Usuários
+              </h3>
               <button
                 onClick={() => setShowUserForm(!showUserForm)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center text-sm font-semibold"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm font-semibold"
               >
-                <UserPlus size={18} className="mr-2" /> Novo Usuário
+                <UserPlus size={16} /> Novo Usuário
               </button>
             </div>
 
+            {/* Formulário novo usuário */}
             {showUserForm && (
-              <div className="p-6 bg-blue-50 border-b border-blue-100">
-                <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input placeholder="Nome Completo" value={newUser.nome} onChange={e => setNewUser({ ...newUser, nome: e.target.value })} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <input placeholder="Nome de Usuário (Login)" value={newUser.usuario} onChange={e => setNewUser({ ...newUser, usuario: e.target.value })} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <input type="email" placeholder="E-mail" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <input type="password" placeholder="Senha" value={newUser.senha} onChange={e => setNewUser({ ...newUser, senha: e.target.value })} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <select value={newUser.tipo} onChange={e => setNewUser({ ...newUser, tipo: e.target.value })} className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+              <div className="mb-5 p-4 rounded-xl border" style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--border)' }}>
+                <form onSubmit={handleCreateUser} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input placeholder="Nome Completo" value={newUser.nome} onChange={e => setNewUser({ ...newUser, nome: e.target.value })} required className={inputCls} style={inputStyle} />
+                  <input placeholder="Login (usuário)" value={newUser.usuario} onChange={e => setNewUser({ ...newUser, usuario: e.target.value })} required className={inputCls} style={inputStyle} />
+                  <input type="email" placeholder="E-mail" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required className={inputCls} style={inputStyle} />
+                  <input type="password" placeholder="Senha inicial" value={newUser.senha} onChange={e => setNewUser({ ...newUser, senha: e.target.value })} required className={inputCls} style={inputStyle} />
+                  <select value={newUser.tipo} onChange={e => setNewUser({ ...newUser, tipo: e.target.value })} className={inputCls} style={inputStyle}>
                     <option value="Funcionário">Funcionário</option>
                     <option value="Administrador">Administrador</option>
                   </select>
                   <div className="flex gap-2">
-                    <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white rounded-lg py-2 font-bold hover:bg-blue-700 disabled:opacity-50">Criar</button>
-                    <button type="button" onClick={() => setShowUserForm(false)} className="flex-1 bg-white border text-gray-600 rounded-lg py-2 font-bold hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white rounded-lg py-2 font-bold hover:bg-blue-700 disabled:opacity-50 text-sm">Criar</button>
+                    <button type="button" onClick={() => setShowUserForm(false)} className="flex-1 border rounded-lg py-2 font-bold text-sm hover:opacity-80 transition" style={{ borderColor: 'var(--border)', color: 'var(--text-sub)' }}>Cancelar</button>
                   </div>
                 </form>
               </div>
             )}
 
+            {/* Tabela de usuários */}
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-100">
-                <thead className="bg-gray-50/50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Nome</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Login</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Permissão</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Ações</th>
+              <table className="min-w-full">
+                <thead>
+                  <tr style={{ borderBottom: `1px solid var(--border)` }}>
+                    <th className="pb-3 text-left text-xs font-semibold uppercase" style={{ color: 'var(--text-sub)' }}>Nome</th>
+                    <th className="pb-3 text-left text-xs font-semibold uppercase" style={{ color: 'var(--text-sub)' }}>Login</th>
+                    <th className="pb-3 text-left text-xs font-semibold uppercase" style={{ color: 'var(--text-sub)' }}>Nível</th>
+                    <th className="pb-3 text-right text-xs font-semibold uppercase" style={{ color: 'var(--text-sub)' }}>Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody>
                   {users.map(u => (
-                    <tr key={u.id} className="hover:bg-gray-50/50 transition">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{u.nome} {u.id === user.id && <span className="text-xs text-blue-500 ml-1">(Você)</span>}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.usuario}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${u.tipo === 'Administrador' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                    <tr key={u.id} style={{ borderBottom: `1px solid var(--border)` }} className="hover:opacity-80 transition">
+                      <td className="py-3 text-sm font-medium" style={{ color: 'var(--text-main)' }}>
+                        {u.nome} {u.id === user.id && <span className="text-xs text-blue-500 ml-1">(Você)</span>}
+                      </td>
+                      <td className="py-3 text-sm" style={{ color: 'var(--text-sub)' }}>{u.usuario}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${u.tipo === 'Administrador' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
                           {u.tipo}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === user.id} className="text-gray-400 hover:text-red-500 disabled:opacity-30 transition">
-                          <Trash2 size={18} />
-                        </button>
+                      <td className="py-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setPasswordModal(u)}
+                            title="Trocar Senha"
+                            className="p-1.5 rounded hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition"
+                          >
+                            <KeyRound size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(u.id)}
+                            disabled={u.id === user.id}
+                            title="Excluir"
+                            className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 disabled:opacity-20 transition"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -231,15 +311,14 @@ export default function Configuracoes() {
           </div>
         </div>
 
-        {/* Categorias e Tipos */}
-        <div className="space-y-6">
+        {/* ─── Categorias e Tipos (col 2) ─── */}
+        <div className="xl:col-span-2 space-y-5">
 
-          {/* Gerenciar Categorias */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center">
-              <Tag size={20} className="mr-2 text-blue-600" /> Categorias
+          {/* Categorias */}
+          <div className={cardCls} style={cardStyle}>
+            <h3 className="text-base font-bold flex items-center gap-2 mb-4" style={{ color: 'var(--text-main)' }}>
+              <Tag size={18} className="text-blue-600" /> Categorias
             </h3>
-            <p className="text-xs text-gray-500 mb-4">Categorias principais do estoque.</p>
 
             <div className="flex gap-2 mb-4">
               <input
@@ -248,40 +327,43 @@ export default function Configuracoes() {
                 value={newCategoryName}
                 onChange={e => setNewCategoryName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className={inputCls}
+                style={inputStyle}
               />
-              <button onClick={handleAddCategory} className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 font-bold text-sm">+</button>
+              <button onClick={handleAddCategory} className="bg-blue-600 text-white px-3 rounded-lg hover:bg-blue-700 font-bold transition flex items-center">
+                <Plus size={18} />
+              </button>
             </div>
 
             <div className="flex flex-wrap gap-2">
               {categories.map(cat => (
-                <span key={cat.id} className="group bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium flex items-center hover:bg-red-50 hover:border-red-100 hover:text-red-700 transition cursor-default">
+                <span key={cat.id} className="group flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-red-50 hover:border-red-100 hover:text-red-600 transition cursor-default">
                   {cat.nome}
-                  <button onClick={() => handleDeleteCategory(cat.id)} className="ml-2 text-blue-300 group-hover:text-red-500 transition">&times;</button>
+                  <button onClick={() => handleDeleteCategory(cat.id)} className="text-blue-300 group-hover:text-red-500 transition ml-1 leading-none">&times;</button>
                 </span>
               ))}
+              {categories.length === 0 && <p className="text-xs" style={{ color: 'var(--text-sub)' }}>Nenhuma categoria ainda.</p>}
             </div>
           </div>
 
-          {/* Gerenciar Tipos */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center">
-              <Layers size={20} className="mr-2 text-indigo-600" /> Tipos por Categoria
+          {/* Tipos por Categoria */}
+          <div className={cardCls} style={cardStyle}>
+            <h3 className="text-base font-bold flex items-center gap-2 mb-1" style={{ color: 'var(--text-main)' }}>
+              <Layers size={18} className="text-indigo-600" /> Tipos por Categoria
             </h3>
-            <p className="text-xs text-gray-500 mb-4">Subtipos de produto dentro de cada categoria.</p>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-sub)' }}>Selecione uma categoria para gerenciar seus tipos.</p>
 
             <div className="relative mb-4">
               <select
                 value={selectedCatForTipo}
                 onChange={e => setSelectedCatForTipo(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none pr-8"
+                className={inputCls + ' appearance-none pr-8'}
+                style={inputStyle}
               >
-                <option value="">Selecione uma categoria...</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.nome}</option>
-                ))}
+                <option value="">Escolha a categoria...</option>
+                {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.nome}</option>)}
               </select>
-              <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 pointer-events-none" style={{ color: 'var(--text-sub)' }} />
             </div>
 
             {selectedCatForTipo && (
@@ -293,29 +375,40 @@ export default function Configuracoes() {
                     value={newTipoName}
                     onChange={e => setNewTipoName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleAddTipo()}
-                    className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className={inputCls}
+                    style={inputStyle}
                   />
-                  <button onClick={handleAddTipo} className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 font-bold text-sm">+</button>
+                  <button onClick={handleAddTipo} className="bg-indigo-600 text-white px-3 rounded-lg hover:bg-indigo-700 font-bold transition flex items-center">
+                    <Plus size={18} />
+                  </button>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {tipos.length === 0 ? (
-                    <p className="text-xs text-gray-400">Nenhum tipo cadastrado para esta categoria.</p>
-                  ) : (
-                    tipos.map(t => (
-                      <span key={t.id} className="group bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-sm font-medium flex items-center hover:bg-red-50 hover:border-red-100 hover:text-red-700 transition cursor-default">
+                  {tipos.length === 0
+                    ? <p className="text-xs" style={{ color: 'var(--text-sub)' }}>Nenhum tipo nesta categoria.</p>
+                    : tipos.map(t => (
+                      <span key={t.id} className="group flex items-center gap-1 bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-red-50 hover:border-red-100 hover:text-red-600 transition cursor-default">
                         {t.nome}
-                        <button onClick={() => handleDeleteTipo(t.id)} className="ml-2 text-indigo-300 group-hover:text-red-500 transition">&times;</button>
+                        <button onClick={() => handleDeleteTipo(t.id)} className="text-indigo-300 group-hover:text-red-500 transition ml-1 leading-none">&times;</button>
                       </span>
                     ))
-                  )}
+                  }
                 </div>
               </>
             )}
           </div>
-
         </div>
       </div>
+
+      {/* Modal de troca de senha */}
+      {passwordModal && (
+        <PasswordModal
+          user={passwordModal}
+          onClose={() => setPasswordModal(null)}
+          onSuccess={loadData}
+          showMsg={showMsg}
+        />
+      )}
     </div>
   );
 }

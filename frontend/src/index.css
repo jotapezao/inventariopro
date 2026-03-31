@@ -1,5 +1,66 @@
 @import "tailwindcss";
 
-body {
-  background-color: #f3f4f6; /* Gray-100 */
+/* ─── Custom dark-mode variant (Tailwind v4) ─── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── CSS Variables — Light mode ─── */
+:root {
+  --bg-base:    #f3f4f6;
+  --bg-card:    #ffffff;
+  --bg-nav:     #2563eb;
+  --text-main:  #111827;
+  --text-sub:   #6b7280;
+  --border:     #e5e7eb;
+  --input-bg:   #f9fafb;
 }
+
+/* ─── CSS Variables — Dark mode ─── */
+.dark {
+  --bg-base:    #0f172a;
+  --bg-card:    #1e293b;
+  --bg-nav:     #1e3a8a;
+  --text-main:  #f1f5f9;
+  --text-sub:   #94a3b8;
+  --border:     #334155;
+  --input-bg:   #0f172a;
+}
+
+/* ─── Apply global colors ─── */
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ─── Dark mode overrides for common Tailwind classes ─── */
+.dark .bg-white          { background-color: var(--bg-card) !important; }
+.dark .bg-gray-50        { background-color: #1e293b !important; }
+.dark .bg-gray-100       { background-color: #1e293b !important; }
+.dark .bg-gray-50\/50    { background-color: rgba(30,41,59,0.5) !important; }
+.dark .border-gray-100   { border-color: var(--border) !important; }
+.dark .border-gray-200   { border-color: var(--border) !important; }
+.dark .border-gray-300   { border-color: var(--border) !important; }
+.dark .text-gray-800     { color: var(--text-main) !important; }
+.dark .text-gray-700     { color: #cbd5e1 !important; }
+.dark .text-gray-600     { color: #94a3b8 !important; }
+.dark .text-gray-500     { color: #64748b !important; }
+.dark .text-gray-400     { color: #475569 !important; }
+.dark .text-gray-900     { color: #f1f5f9 !important; }
+.dark .divide-gray-200   > * + * { border-color: #334155 !important; }
+.dark .divide-gray-100   > * + * { border-color: #1e293b !important; }
+.dark .hover\:bg-gray-50:hover   { background-color: #263040 !important; }
+.dark .hover\:bg-gray-50\/50:hover { background-color: rgba(38,48,64,0.5) !important; }
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #475569 !important;
+}
+.dark .shadow,
+.dark .shadow-sm,
+.dark .shadow-md { box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
