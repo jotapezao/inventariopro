@@ -2,38 +2,38 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const db = require('./src/database/db'); // Garante que o DB seja inicializado
+const db = require('./src/database/db');
 
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Servir arquivos estáticos
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rotas Base
 app.get('/api', (req, res) => {
   res.json({ message: 'API do Inventário rodando!' });
 });
 
-// Importar e usar rotas (serão criadas depois)
+// Rotas
 const authRoutes = require('./src/routes/authRoutes');
 const productRoutes = require('./src/routes/productRoutes');
 const movementRoutes = require('./src/routes/movementRoutes');
 const categoryRoutes = require('./src/routes/categoryRoutes');
 const solicitationRoutes = require('./src/routes/solicitationRoutes');
+const typeRoutes = require('./src/routes/typeRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/produtos', productRoutes);
 app.use('/api/movimentacoes', movementRoutes);
 app.use('/api/categorias', categoryRoutes);
 app.use('/api/solicitacoes', solicitationRoutes);
+app.use('/api/tipos', typeRoutes);
 
-// SERVIR FRONTEND (PARA PRODUÇÃO NO RAILWAY)
-// Serve os arquivos estáticos da pasta dist do frontend
+// SERVIR FRONTEND
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-// Qualquer rota que não seja API deve retornar o index.html (SPA routing)
 app.use((req, res) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));

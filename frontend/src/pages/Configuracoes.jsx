@@ -1,20 +1,25 @@
 import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
-import { Users, AlertCircle, Trash2, UserPlus, CheckCircle, XCircle, Tag } from 'lucide-react';
+import { Users, AlertCircle, Trash2, UserPlus, CheckCircle, XCircle, Tag, Layers, ChevronDown } from 'lucide-react';
 
 export default function Configuracoes() {
   const { user } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
-  
-  // User Form State
+  const [tipos, setTipos] = useState([]);
+
+  // Usuário
   const [showUserForm, setShowUserForm] = useState(false);
   const [newUser, setNewUser] = useState({ nome: '', usuario: '', email: '', senha: '', tipo: 'Funcionário' });
-  
-  // Category Form State
+
+  // Categoria
   const [newCategoryName, setNewCategoryName] = useState('');
-  
+
+  // Tipo
+  const [selectedCatForTipo, setSelectedCatForTipo] = useState('');
+  const [newTipoName, setNewTipoName] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -23,6 +28,14 @@ export default function Configuracoes() {
       loadData();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (selectedCatForTipo) {
+      loadTipos(selectedCatForTipo);
+    } else {
+      setTipos([]);
+    }
+  }, [selectedCatForTipo]);
 
   const loadData = async () => {
     try {
@@ -37,12 +50,21 @@ export default function Configuracoes() {
     }
   };
 
+  const loadTipos = async (categoria_id) => {
+    try {
+      const res = await api.get(`/tipos?categoria_id=${categoria_id}`);
+      setTipos(res.data);
+    } catch (error) {
+      console.error("Erro ao carregar tipos:", error);
+    }
+  };
+
   const showMsg = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 4000);
   };
 
-  // User Handlers
+  // Usuários
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -70,24 +92,51 @@ export default function Configuracoes() {
     }
   };
 
-  // Category Handlers
+  // Categorias
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
     try {
       await api.post('/categorias', { nome: newCategoryName });
       setNewCategoryName('');
       loadData();
+      showMsg('success', 'Categoria adicionada!');
     } catch (error) {
       showMsg('error', error.response?.data?.message || 'Erro ao adicionar categoria.');
     }
   };
 
   const handleDeleteCategory = async (id) => {
+    if (!window.confirm('Excluir esta categoria também removerá todos os Tipos vinculados. Continuar?')) return;
     try {
       await api.delete(`/categorias/${id}`);
       loadData();
+      if (selectedCatForTipo == id) setSelectedCatForTipo('');
+      showMsg('success', 'Categoria excluída!');
     } catch (error) {
       showMsg('error', error.response?.data?.message || 'Erro ao excluir categoria.');
+    }
+  };
+
+  // Tipos
+  const handleAddTipo = async () => {
+    if (!newTipoName.trim() || !selectedCatForTipo) return;
+    try {
+      await api.post('/tipos', { nome: newTipoName, categoria_id: selectedCatForTipo });
+      setNewTipoName('');
+      loadTipos(selectedCatForTipo);
+      showMsg('success', 'Tipo adicionado!');
+    } catch (error) {
+      showMsg('error', error.response?.data?.message || 'Erro ao adicionar tipo.');
+    }
+  };
+
+  const handleDeleteTipo = async (id) => {
+    try {
+      await api.delete(`/tipos/${id}`);
+      loadTipos(selectedCatForTipo);
+      showMsg('success', 'Tipo excluído!');
+    } catch (error) {
+      showMsg('error', error.response?.data?.message || 'Erro ao excluir tipo.');
     }
   };
 
@@ -107,38 +156,37 @@ export default function Configuracoes() {
         <h2 className="text-3xl font-bold text-gray-800 flex items-center">
           <Users className="mr-3 text-blue-600" /> Configurações do Sistema
         </h2>
-        
         {message.text && (
           <div className={`px-4 py-2 rounded-md flex items-center shadow-sm ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {message.type === 'success' ? <CheckCircle size={18} className="mr-2"/> : <XCircle size={18} className="mr-2"/>}
+            {message.type === 'success' ? <CheckCircle size={18} className="mr-2" /> : <XCircle size={18} className="mr-2" />}
             {message.text}
           </div>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Gestão de Usuários */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
               <h3 className="text-lg font-bold text-gray-800">Gestão de Usuários</h3>
-              <button 
+              <button
                 onClick={() => setShowUserForm(!showUserForm)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center text-sm font-semibold"
               >
-                <UserPlus size={18} className="mr-2"/> Novo Usuário
+                <UserPlus size={18} className="mr-2" /> Novo Usuário
               </button>
             </div>
 
             {showUserForm && (
-              <div className="p-6 bg-blue-50 border-b border-blue-100 animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="p-6 bg-blue-50 border-b border-blue-100">
                 <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input placeholder="Nome Completo" value={newUser.nome} onChange={e => setNewUser({...newUser, nome: e.target.value})} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <input placeholder="Nome de Usuário (Login)" value={newUser.usuario} onChange={e => setNewUser({...newUser, usuario: e.target.value})} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <input type="email" placeholder="E-mail" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <input type="password" placeholder="Senha" value={newUser.senha} onChange={e => setNewUser({...newUser, senha: e.target.value})} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-                  <select value={newUser.tipo} onChange={e => setNewUser({...newUser, tipo: e.target.value})} className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                  <input placeholder="Nome Completo" value={newUser.nome} onChange={e => setNewUser({ ...newUser, nome: e.target.value })} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input placeholder="Nome de Usuário (Login)" value={newUser.usuario} onChange={e => setNewUser({ ...newUser, usuario: e.target.value })} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input type="email" placeholder="E-mail" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input type="password" placeholder="Senha" value={newUser.senha} onChange={e => setNewUser({ ...newUser, senha: e.target.value })} required className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <select value={newUser.tipo} onChange={e => setNewUser({ ...newUser, tipo: e.target.value })} className="bg-white border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="Funcionário">Funcionário</option>
                     <option value="Administrador">Administrador</option>
                   </select>
@@ -171,11 +219,7 @@ export default function Configuracoes() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button 
-                          onClick={() => handleDeleteUser(u.id)}
-                          disabled={u.id === user.id}
-                          className="text-gray-400 hover:text-red-500 disabled:opacity-30 transition"
-                        >
+                        <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === user.id} className="text-gray-400 hover:text-red-500 disabled:opacity-30 transition">
                           <Trash2 size={18} />
                         </button>
                       </td>
@@ -187,53 +231,90 @@ export default function Configuracoes() {
           </div>
         </div>
 
-        {/* Gestão de Categorias */}
+        {/* Categorias e Tipos */}
         <div className="space-y-6">
+
+          {/* Gerenciar Categorias */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-              <Tag size={20} className="mr-2 text-blue-600"/> Categorias
+            <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center">
+              <Tag size={20} className="mr-2 text-blue-600" /> Categorias
             </h3>
-            <p className="text-sm text-gray-500 mb-6">Personalize as categorias para organização do seu estoque.</p>
-            
-            <div className="flex gap-2 mb-6">
-              <input 
-                type="text" 
-                placeholder="Nova Categoria..." 
+            <p className="text-xs text-gray-500 mb-4">Categorias principais do estoque.</p>
+
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="Nova categoria..."
                 value={newCategoryName}
                 onChange={e => setNewCategoryName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition" 
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
-              <button 
-                onClick={handleAddCategory}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-bold text-sm transition"
-              >
-                +
-              </button>
+              <button onClick={handleAddCategory} className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 font-bold text-sm">+</button>
             </div>
 
             <div className="flex flex-wrap gap-2">
-               {categories.map(cat => (
-                 <span key={cat.id} className="group bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium flex items-center hover:bg-red-50 hover:border-red-100 hover:text-red-700 transition cursor-default">
-                    {cat.nome}
-                    <button 
-                      onClick={() => handleDeleteCategory(cat.id)}
-                      className="ml-2 text-blue-300 group-hover:text-red-500 transition"
-                    >
-                      &times;
-                    </button>
-                 </span>
-               ))}
+              {categories.map(cat => (
+                <span key={cat.id} className="group bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-sm font-medium flex items-center hover:bg-red-50 hover:border-red-100 hover:text-red-700 transition cursor-default">
+                  {cat.nome}
+                  <button onClick={() => handleDeleteCategory(cat.id)} className="ml-2 text-blue-300 group-hover:text-red-500 transition">&times;</button>
+                </span>
+              ))}
             </div>
           </div>
-          
-          {/* Sessão de Ajustes Extras (Placeholder conforme sugestão do plano) */}
-          <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
-            <h4 className="text-sm font-bold text-gray-600 mb-1">Ajustes Adicionais</h4>
-            <p className="text-xs text-gray-400">Opções avançadas de sistema em breve.</p>
-          </div>
-        </div>
 
+          {/* Gerenciar Tipos */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-1 flex items-center">
+              <Layers size={20} className="mr-2 text-indigo-600" /> Tipos por Categoria
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">Subtipos de produto dentro de cada categoria.</p>
+
+            <div className="relative mb-4">
+              <select
+                value={selectedCatForTipo}
+                onChange={e => setSelectedCatForTipo(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none pr-8"
+              >
+                <option value="">Selecione uma categoria...</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {selectedCatForTipo && (
+              <>
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Novo tipo..."
+                    value={newTipoName}
+                    onChange={e => setNewTipoName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddTipo()}
+                    className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                  <button onClick={handleAddTipo} className="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 font-bold text-sm">+</button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {tipos.length === 0 ? (
+                    <p className="text-xs text-gray-400">Nenhum tipo cadastrado para esta categoria.</p>
+                  ) : (
+                    tipos.map(t => (
+                      <span key={t.id} className="group bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full text-sm font-medium flex items-center hover:bg-red-50 hover:border-red-100 hover:text-red-700 transition cursor-default">
+                        {t.nome}
+                        <button onClick={() => handleDeleteTipo(t.id)} className="ml-2 text-indigo-300 group-hover:text-red-500 transition">&times;</button>
+                      </span>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+        </div>
       </div>
     </div>
   );

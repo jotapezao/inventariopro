@@ -1,7 +1,6 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Configuração do Pool de conexão (Railway fornece DATABASE_URL)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
@@ -25,7 +24,7 @@ const createTables = async () => {
       )
     `);
 
-    // Inserir Admin inicial ou atualizar a senha (para garantir que admin / admin sempre funcione)
+    // Inserir Admin inicial ou atualizar a senha
     const bcrypt = require('bcrypt');
     const hashedPass = await bcrypt.hash('admin', 10);
     await client.query(`
@@ -52,12 +51,61 @@ const createTables = async () => {
       }
     }
 
-    // Tabela Produtos
+    // Tabela Tipos (subtipo por categoria)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS Tipos (
+        id SERIAL PRIMARY KEY,
+        nome TEXT NOT NULL,
+        categoria_id INTEGER NOT NULL REFERENCES Categorias(id) ON DELETE CASCADE,
+        UNIQUE(nome, categoria_id)
+      )
+    `);
+
+    // Inserir tipos padrão se a tabela estiver vazia
+    const tipoCheck = await client.query("SELECT COUNT(*) FROM Tipos");
+    if (parseInt(tipoCheck.rows[0].count) === 0) {
+      const catRows = await client.query("SELECT id, nome FROM Categorias");
+      const catMap = {};
+      catRows.rows.forEach(r => { catMap[r.nome] = r.id; });
+
+      const defaultTipos = [
+        { nome: 'Lâmpada', cat: 'Elétrica' },
+        { nome: 'Disjuntor', cat: 'Elétrica' },
+        { nome: 'DPS', cat: 'Elétrica' },
+        { nome: 'Fio/Cabo', cat: 'Elétrica' },
+        { nome: 'Refletor', cat: 'Elétrica' },
+        { nome: 'Cano', cat: 'Hidráulica' },
+        { nome: 'Joelho', cat: 'Hidráulica' },
+        { nome: 'Cotovelo', cat: 'Hidráulica' },
+        { nome: 'TE', cat: 'Hidráulica' },
+        { nome: 'Registro', cat: 'Hidráulica' },
+        { nome: 'Cimento', cat: 'Construção' },
+        { nome: 'Tinta', cat: 'Construção' },
+        { nome: 'Estrutura', cat: 'Construção' },
+        { nome: 'Tijolo', cat: 'Construção' },
+        { nome: 'Ferramenta Manual', cat: 'Ferramentas' },
+        { nome: 'Ferramenta Elétrica', cat: 'Ferramentas' },
+        { nome: 'EPI', cat: 'Ferramentas' },
+        { nome: 'Geral', cat: 'Outros' },
+      ];
+
+      for (const t of defaultTipos) {
+        if (catMap[t.cat]) {
+          await client.query(
+            "INSERT INTO Tipos (nome, categoria_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+            [t.nome, catMap[t.cat]]
+          );
+        }
+      }
+    }
+
+    // Tabela Produtos com tipo_id
     await client.query(`
       CREATE TABLE IF NOT EXISTS Produtos (
         id SERIAL PRIMARY KEY,
         nome TEXT NOT NULL,
         categoria_id INTEGER REFERENCES Categorias(id),
+        tipo_id INTEGER REFERENCES Tipos(id),
         codigo TEXT,
         quantidade INTEGER DEFAULT 0,
         unidade TEXT NOT NULL,
@@ -67,6 +115,11 @@ const createTables = async () => {
       )
     `);
 
+    // Migração segura: adicionar tipo_id se não existir
+    await client.query(`
+      ALTER TABLE Produtos ADD COLUMN IF NOT EXISTS tipo_id INTEGER REFERENCES Tipos(id)
+    `);
+
     // Tabela Movimentacoes
     await client.query(`
       CREATE TABLE IF NOT EXISTS Movimentacoes (
@@ -74,17 +127,25 @@ const createTables = async () => {
         produto_id INTEGER NOT NULL REFERENCES Produtos(id) ON DELETE CASCADE,
         tipo TEXT NOT NULL CHECK(tipo IN ('entrada', 'saida')),
         quantidade INTEGER NOT NULL,
-        usuario_id INTEGER NOT NULL REFERENCES Usuarios(id),
+        usuario_id INTEGER REFERENCES Usuarios(id),
+        nome_solicitante TEXT,
         data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Tabela Solicitacoes
+    // Migração segura: adicionar nome_solicitante em Movimentacoes
+    await client.query(`
+      ALTER TABLE Movimentacoes ADD COLUMN IF NOT EXISTS nome_solicitante TEXT
+    `);
+
+    // Tabela Solicitacoes com suporte a pedidos sem login
     await client.query(`
       CREATE TABLE IF NOT EXISTS Solicitacoes (
         id SERIAL PRIMARY KEY,
-        usuario_id INTEGER NOT NULL REFERENCES Usuarios(id),
-        status TEXT NOT NULL DEFAULT 'pendente' CHECK(status IN ('pendente', 'aprovada', 'rejeitada')),
+        usuario_id INTEGER REFERENCES Usuarios(id),
+        nome_solicitante TEXT,
+        tipo_solicitacao TEXT NOT NULL DEFAULT 'saida',
+        status TEXT NOT NULL DEFAULT 'pendente',
         observacao TEXT,
         data_solicitacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         data_aprovacao TIMESTAMP,
@@ -92,15 +153,27 @@ const createTables = async () => {
       )
     `);
 
-    // Tabela ItensSolicitacao
+    // Migrações seguras para Solicitacoes
+    await client.query(`ALTER TABLE Solicitacoes ADD COLUMN IF NOT EXISTS nome_solicitante TEXT`);
+    await client.query(`ALTER TABLE Solicitacoes ADD COLUMN IF NOT EXISTS tipo_solicitacao TEXT DEFAULT 'saida'`);
+
+    // Tabela ItensSolicitacao com campos para entrada livre (produto novo)
     await client.query(`
       CREATE TABLE IF NOT EXISTS ItensSolicitacao (
         id SERIAL PRIMARY KEY,
         solicitacao_id INTEGER NOT NULL REFERENCES Solicitacoes(id) ON DELETE CASCADE,
-        produto_id INTEGER NOT NULL REFERENCES Produtos(id) ON DELETE CASCADE,
+        produto_id INTEGER REFERENCES Produtos(id) ON DELETE CASCADE,
+        nome_produto_livre TEXT,
+        categoria_livre TEXT,
+        tipo_livre TEXT,
         quantidade INTEGER NOT NULL
       )
     `);
+
+    // Migrações seguras para ItensSolicitacao
+    await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS nome_produto_livre TEXT`);
+    await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS categoria_livre TEXT`);
+    await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS tipo_livre TEXT`);
 
     await client.query('COMMIT');
     console.log('Tabelas PostgreSQL verificadas/criadas com sucesso.');
@@ -113,7 +186,6 @@ const createTables = async () => {
   }
 };
 
-// Inicializa as tabelas na primeira execução
 createTables().catch(err => console.error(err));
 
 module.exports = {
