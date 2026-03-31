@@ -1,6 +1,4 @@
 [build]
-provider = "nixpacks"
-builder = "npm"
 buildCommand = "npm run build"
 
 [deploy]
