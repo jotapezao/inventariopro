@@ -28,10 +28,12 @@ export default function SolicitacaoPublica() {
   const [filterTipo, setFilterTipo] = useState('');
   const [basket, setBasket] = useState([]);
 
-  // Para ENTRADA: produto novo (livre)
+  // Para ENTRADA: produto novo (com selects de categoria e tipo)
   const [entradaItens, setEntradaItens] = useState([
-    { nome_produto_livre: '', categoria_livre: '', tipo_livre: '', quantidade: 1 }
+    { nome_produto_livre: '', categoria_id: '', categoria_livre: '', tipo_id: '', tipo_livre: '', quantidade: 1 }
   ]);
+  const [tiposPorItem, setTiposPorItem] = useState([[]]); // array de arrays por item
+
 
   useEffect(() => {
     loadCategories();
@@ -90,17 +92,40 @@ export default function SolicitacaoPublica() {
     i.produto_id === id ? { ...i, quantidade: Math.max(1, parseInt(qtd) || 1) } : i
   ));
 
-  // Entrada: itens livres
+  // Entrada: itens
   const addEntradaItem = () => {
-    setEntradaItens([...entradaItens, { nome_produto_livre: '', categoria_livre: '', tipo_livre: '', quantidade: 1 }]);
+    setEntradaItens([...entradaItens, { nome_produto_livre: '', categoria_id: '', categoria_livre: '', tipo_id: '', tipo_livre: '', quantidade: 1 }]);
+    setTiposPorItem([...tiposPorItem, []]);
   };
   const removeEntradaItem = (idx) => {
     if (entradaItens.length === 1) return;
     setEntradaItens(entradaItens.filter((_, i) => i !== idx));
+    setTiposPorItem(tiposPorItem.filter((_, i) => i !== idx));
   };
   const updateEntradaItem = (idx, field, value) => {
     setEntradaItens(entradaItens.map((item, i) => i === idx ? { ...item, [field]: value } : item));
   };
+  const handleEntradaCategoria = async (idx, categoriaId) => {
+    const cat = categories.find(c => String(c.id) === String(categoriaId));
+    setEntradaItens(entradaItens.map((item, i) =>
+      i === idx ? { ...item, categoria_id: categoriaId, categoria_livre: cat?.nome || '', tipo_id: '', tipo_livre: '' } : item
+    ));
+    if (categoriaId) {
+      try {
+        const res = await api.get(`/tipos?categoria_id=${categoriaId}`);
+        setTiposPorItem(tiposPorItem.map((t, i) => i === idx ? res.data : t));
+      } catch { setTiposPorItem(tiposPorItem.map((t, i) => i === idx ? [] : t)); }
+    } else {
+      setTiposPorItem(tiposPorItem.map((t, i) => i === idx ? [] : t));
+    }
+  };
+  const handleEntradaTipo = (idx, tipoId) => {
+    const t = tiposPorItem[idx]?.find(t => String(t.id) === String(tipoId));
+    setEntradaItens(entradaItens.map((item, i) =>
+      i === idx ? { ...item, tipo_id: tipoId, tipo_livre: t?.nome || '' } : item
+    ));
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -314,39 +339,73 @@ export default function SolicitacaoPublica() {
             </div>
           )}
 
-          {/* ENTRADA: itens livres */}
+          {/* ENTRADA: itens com selects */}
           {!isSaida && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 className="font-bold text-gray-800 mb-4">Materiais Recebidos</h3>
+              <h3 className="font-bold text-gray-800 mb-2">Materiais Recebidos</h3>
               <p className="text-sm text-gray-500 mb-4">Informe os materiais que chegaram. O administrador confirmará a entrada.</p>
 
               <div className="space-y-4">
                 {entradaItens.map((item, idx) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Nome do Produto *</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Cano PVC 3/4"
-                        value={item.nome_produto_livre}
-                        onChange={e => updateEntradaItem(idx, 'nome_produto_livre', e.target.value)}
-                        className={inputCls}
-                        required
-                      />
+                  <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-100 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Nome do Produto */}
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Nome do Produto *</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Cano PVC 3/4"
+                          value={item.nome_produto_livre}
+                          onChange={e => updateEntradaItem(idx, 'nome_produto_livre', e.target.value)}
+                          className={inputCls}
+                          required
+                        />
+                      </div>
+
+                      {/* Categoria — select */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Categoria</label>
+                        <div className="relative">
+                          <select
+                            value={item.categoria_id}
+                            onChange={e => handleEntradaCategoria(idx, e.target.value)}
+                            className={selectCls + ' appearance-none pr-8'}
+                          >
+                            <option value="">Selecione a categoria...</option>
+                            {categories.map(c => (
+                              <option key={c.id} value={c.id}>{c.nome}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+                        </div>
+                      </div>
+
+                      {/* Tipo — select filtrado por categoria */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
+                        <div className="relative">
+                          <select
+                            value={item.tipo_id}
+                            onChange={e => handleEntradaTipo(idx, e.target.value)}
+                            disabled={!item.categoria_id}
+                            className={selectCls + ' appearance-none pr-8 disabled:text-gray-400'}
+                          >
+                            <option value="">
+                              {item.categoria_id ? 'Selecione o tipo...' : 'Selecione uma categoria primeiro'}
+                            </option>
+                            {(tiposPorItem[idx] || []).map(t => (
+                              <option key={t.id} value={t.id}>{t.nome}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Categoria</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Hidráulica"
-                        value={item.categoria_livre}
-                        onChange={e => updateEntradaItem(idx, 'categoria_livre', e.target.value)}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Quantidade *</label>
-                      <div className="flex gap-2">
+
+                    {/* Quantidade + Remover */}
+                    <div className="flex items-end gap-3">
+                      <div className="w-40">
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Quantidade *</label>
                         <input
                           type="number"
                           min="1"
@@ -354,12 +413,12 @@ export default function SolicitacaoPublica() {
                           onChange={e => updateEntradaItem(idx, 'quantidade', parseInt(e.target.value) || 1)}
                           className={inputCls}
                         />
-                        {entradaItens.length > 1 && (
-                          <button type="button" onClick={() => removeEntradaItem(idx)} className="text-red-400 hover:text-red-700 px-2">
-                            <Trash2 size={16} />
-                          </button>
-                        )}
                       </div>
+                      {entradaItens.length > 1 && (
+                        <button type="button" onClick={() => removeEntradaItem(idx)} className="text-red-400 hover:text-red-700 pb-2">
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -374,6 +433,7 @@ export default function SolicitacaoPublica() {
               </button>
             </div>
           )}
+
 
           {/* Erro */}
           {error && (
