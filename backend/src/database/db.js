@@ -160,6 +160,8 @@ const createTables = async () => {
 
     // Migração para Produtos (adicionar categoria_id se nao existir e remover restrição se houver)
     await client.query(`ALTER TABLE Produtos ADD COLUMN IF NOT EXISTS categoria_id INTEGER REFERENCES Categorias(id)`).catch(e => console.log('Aviso (Produtos):', e.message));
+    // Correção para quem ainda tem a coluna "categoria" da versão anterior
+    await client.query(`ALTER TABLE Produtos ALTER COLUMN categoria DROP NOT NULL`).catch(e => console.log('Aviso (Produtos categoria nullable):', e.message));
 
     // Tabela ItensSolicitacao com campos para entrada livre (produto novo)
     await client.query(`
