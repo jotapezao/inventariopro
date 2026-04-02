@@ -4,17 +4,19 @@ import { Camera, Upload, CheckCircle, XCircle, ChevronDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom';
 
 export default function CadastroProduto() {
-  const defaultFormData = {
+  const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+  const getDefaultFormData = () => ({
     nome: '',
     categoria_id: '',
     tipo_id: '',
-    codigo: '',
+    codigo: generateCode(),
     quantidade: '0',
     unidade: 'unidade',
     localizacao: ''
-  };
+  });
 
-  const [formData, setFormData] = useState(defaultFormData);
+  const [formData, setFormData] = useState(getDefaultFormData());
   const [categories, setCategories] = useState([]);
   const [tipos, setTipos] = useState([]);
 
@@ -178,7 +180,7 @@ export default function CadastroProduto() {
       setSuccess('Produto cadastrado com sucesso!');
 
       if (actionType === 'continue') {
-        setFormData(defaultFormData);
+        setFormData(getDefaultFormData());
         setFoto(null);
         setPreview(null);
         setTipos([]);

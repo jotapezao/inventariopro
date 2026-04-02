@@ -9,6 +9,7 @@ import Configuracoes from '../pages/Configuracoes';
 import NovaSolicitacao from '../pages/NovaSolicitacao';
 import GerenciarSolicitacoes from '../pages/GerenciarSolicitacoes';
 import SolicitacaoPublica from '../pages/SolicitacaoPublica';
+import HistoricoMovimentacoes from '../pages/HistoricoMovimentacoes';
 import { Layout } from '../components/Layout';
 
 const PrivateRoute = ({ children }) => {
@@ -66,6 +67,14 @@ export const AppRoutes = () => {
           <PrivateRoute>
             <Layout>
               <GerenciarSolicitacoes />
+            </Layout>
+          </PrivateRoute>
+        } />
+
+        <Route path="/historico" element={
+          <PrivateRoute>
+            <Layout>
+              <HistoricoMovimentacoes />
             </Layout>
           </PrivateRoute>
         } />

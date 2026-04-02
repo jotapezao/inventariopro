@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { PackageOpen, LogOut, PlusSquare, Settings, HelpCircle, LogIn, Sun, Moon } from 'lucide-react';
+import { PackageOpen, LogOut, PlusSquare, Settings, HelpCircle, LogIn, Sun, Moon, History, FileBox } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Layout = ({ children }) => {
@@ -21,6 +21,9 @@ export const Layout = ({ children }) => {
             </div>
 
             <nav className="flex items-center space-x-1">
+              <Link to="/" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
+                <FileBox className="h-4 w-4 mr-1" /> Estoque de Materiais
+              </Link>
               <Link to="/solicitar-saida" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm">
                 Solicitar Material
               </Link>
@@ -31,6 +34,9 @@ export const Layout = ({ children }) => {
                   </Link>
                   <Link to="/cadastrar-produto" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
                     <PlusSquare className="h-4 w-4 mr-1" /> Produto
+                  </Link>
+                  <Link to="/historico" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
+                    <History className="h-4 w-4 mr-1" /> Histórico
                   </Link>
                   <Link to="/configuracoes" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
                     <Settings className="h-4 w-4 mr-1" /> Configs

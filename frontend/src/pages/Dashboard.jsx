@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
-import { Search, Plus, Minus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus, ChevronDown, Filter } from 'lucide-react';
+import { Search, Plus, Minus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus, ChevronDown, Filter, Download } from 'lucide-react';
 import { MovementsModal } from '../components/MovementsModal';
 import { useNavigate } from 'react-router-dom';
 
@@ -80,6 +80,34 @@ export default function Dashboard() {
     loadProducts();
   };
 
+  const exportToCSV = () => {
+    if (!products || products.length === 0) return;
+    
+    // Cabeçalhos (adicionando BOM para acentos abrirem corretamente no Excel)
+    let csvContent = '\uFEFF';
+    
+    csvContent += 'ID;Nome do Produto;Código;Categoria;Tipo;Localização;Quantidade;Unidade\n';
+    
+    products.forEach(p => {
+      const nome = p.nome ? p.nome.replace(/;/g, ',') : '';
+      const codigo = p.codigo || '';
+      const categoria = p.categoria_nome || '';
+      const tipo = p.tipo_nome || '';
+      const loc = p.localizacao ? p.localizacao.replace(/;/g, ',') : '';
+      
+      csvContent += `${p.id};${nome};${codigo};${categoria};${tipo};${loc};${p.quantidade};${p.unidade}\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'estoque_materiais.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const selectCls = "bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none pr-7";
 
   return (
@@ -116,15 +144,27 @@ export default function Dashboard() {
           <FileBox className="mr-2" /> Estoque de Materiais
         </h1>
 
-        <div className="flex bg-white items-center border border-gray-300 rounded-md px-3 py-2 w-full sm:w-auto shadow-sm">
-          <Search className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou código..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="outline-none w-full sm:w-56"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="flex bg-white items-center border border-gray-300 rounded-md px-3 py-2 w-full sm:w-auto shadow-sm">
+            <Search className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar por nome ou código..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="outline-none w-full sm:w-56"
+            />
+          </div>
+          {signed && (
+            <button 
+              onClick={exportToCSV}
+              className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium transition shadow-sm"
+              title="Exportar Estoque"
+            >
+              <Download size={18} />
+              <span className="hidden sm:inline">Exportar Excel</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -53,7 +53,7 @@ exports.getMovements = async (req, res) => {
       SELECT m.*, p.nome as produto_nome, u.nome as usuario_nome
       FROM Movimentacoes m
       JOIN Produtos p ON m.produto_id = p.id
-      JOIN Usuarios u ON m.usuario_id = u.id
+      LEFT JOIN Usuarios u ON m.usuario_id = u.id
       ORDER BY m.id DESC
     `);
     res.json(result.rows);
