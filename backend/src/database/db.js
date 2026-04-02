@@ -154,8 +154,12 @@ const createTables = async () => {
     `);
 
     // Migrações seguras para Solicitacoes
+    await client.query(`ALTER TABLE Solicitacoes ALTER COLUMN usuario_id DROP NOT NULL`).catch(e => console.log('Aviso (usuario_id null):', e.message));
     await client.query(`ALTER TABLE Solicitacoes ADD COLUMN IF NOT EXISTS nome_solicitante TEXT`);
     await client.query(`ALTER TABLE Solicitacoes ADD COLUMN IF NOT EXISTS tipo_solicitacao TEXT DEFAULT 'saida'`);
+
+    // Migração para Produtos (adicionar categoria_id se nao existir e remover restrição se houver)
+    await client.query(`ALTER TABLE Produtos ADD COLUMN IF NOT EXISTS categoria_id INTEGER REFERENCES Categorias(id)`).catch(e => console.log('Aviso (Produtos):', e.message));
 
     // Tabela ItensSolicitacao com campos para entrada livre (produto novo)
     await client.query(`
