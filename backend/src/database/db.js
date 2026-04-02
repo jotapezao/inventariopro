@@ -166,6 +166,7 @@ const createTables = async () => {
         nome_produto_livre TEXT,
         categoria_livre TEXT,
         tipo_livre TEXT,
+        foto TEXT,
         quantidade INTEGER NOT NULL
       )
     `);
@@ -174,6 +175,8 @@ const createTables = async () => {
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS nome_produto_livre TEXT`);
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS categoria_livre TEXT`);
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS tipo_livre TEXT`);
+    await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS foto TEXT`);
+
 
     await client.query('COMMIT');
     console.log('Tabelas PostgreSQL verificadas/criadas com sucesso.');

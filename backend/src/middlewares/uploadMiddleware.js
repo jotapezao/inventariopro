@@ -4,13 +4,17 @@ const path = require('path');
 // Configuração do armazenamento
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/produtos/');
+    const isSolicitation = req.originalUrl.includes('solicitacoes');
+    const folder = isSolicitation ? 'uploads/solicitacoes/' : 'uploads/produtos/';
+    cb(null, folder);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'produto-' + uniqueSuffix + path.extname(file.originalname));
+    const prefix = req.originalUrl.includes('solicitacoes') ? 'sol-' : 'prod-';
+    cb(null, prefix + uniqueSuffix + path.extname(file.originalname));
   }
 });
+
 
 // Filtro de arquivos (apenas imagens)
 const fileFilter = (req, file, cb) => {

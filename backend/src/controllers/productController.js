@@ -5,6 +5,10 @@ exports.createProduct = async (req, res) => {
   const { nome, categoria_id, tipo_id, codigo, quantidade, unidade, localizacao } = req.body;
   const foto = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
+  console.log('--- Cadastro de Produto ---');
+  console.log('Body:', req.body);
+  console.log('Foto:', foto);
+
   if (!nome || !categoria_id || !unidade) {
     return res.status(400).json({ message: 'Campos obrigatórios: nome, categoria, unidade.' });
   }
@@ -17,19 +21,22 @@ exports.createProduct = async (req, res) => {
     `;
     const result = await db.query(query, [
       nome,
-      categoria_id,
-      tipo_id || null,
+      categoria_id ? parseInt(categoria_id) : null,
+      tipo_id ? parseInt(tipo_id) : null,
       codigo || '',
-      quantidade || 0,
+      quantidade ? parseInt(quantidade) : 0,
       unidade,
       localizacao,
       foto
     ]);
+    console.log('Produto criado:', result.rows[0].id);
     res.status(201).json({ message: 'Produto cadastrado com sucesso', id: result.rows[0].id, foto });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Erro no catch de createProduct:', err.message);
+    res.status(500).json({ message: 'Erro interno ao cadastrar: ' + err.message });
   }
 };
+
 
 // Listar produtos com filtro por categoria e tipo
 exports.getProducts = async (req, res) => {

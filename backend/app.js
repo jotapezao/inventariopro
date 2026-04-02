@@ -11,6 +11,17 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+const fs = require('fs');
+
+// Criar pastas de upload se não existirem
+const uploadDirs = ['uploads/produtos', 'uploads/solicitacoes'];
+uploadDirs.forEach(dir => {
+  const dirPath = path.join(__dirname, dir);
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+});
+
 // Rotas Base
 app.get('/api', (req, res) => {
   res.json({ message: 'API do Inventário rodando!' });
