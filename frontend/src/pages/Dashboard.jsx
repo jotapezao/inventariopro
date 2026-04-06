@@ -3,7 +3,9 @@ import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
 import { Search, Plus, Minus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus, ChevronDown, Filter, Download } from 'lucide-react';
 import { MovementsModal } from '../components/MovementsModal';
+import { EditProductModal } from '../components/EditProductModal';
 import { useNavigate } from 'react-router-dom';
+import { Pencil } from 'lucide-react';
 
 export default function Dashboard() {
   const { signed } = useContext(AuthContext);
@@ -21,6 +23,7 @@ export default function Dashboard() {
 
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalType, setModalType] = useState('entrada');
 
@@ -75,6 +78,11 @@ export default function Dashboard() {
     setIsModalOpen(true);
   };
 
+  const openEditModal = (product) => {
+    setSelectedProduct(product);
+    setIsEditModalOpen(true);
+  };
+
   const handleMovementSuccess = () => {
     setIsModalOpen(false);
     loadProducts();
@@ -109,6 +117,12 @@ export default function Dashboard() {
   };
 
   const selectCls = "bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none pr-7";
+
+  const getImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `/${path}`;
+  };
 
   return (
     <div>
@@ -233,10 +247,10 @@ export default function Dashboard() {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
                             {product.foto ? (
-                              <img className="h-10 w-10 rounded object-cover" src={`/${product.foto}`} alt={product.nome} />
+                              <img className="h-10 w-10 rounded object-cover shadow-sm" src={getImageUrl(product.foto)} alt={product.nome} />
                             ) : (
-                              <div className="h-10 w-10 rounded bg-gray-200 flex items-center justify-center text-gray-500">
-                                <FileBox size={20} />
+                              <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-100">
+                                <FileBox size={18} />
                               </div>
                             )}
                           </div>
@@ -267,6 +281,9 @@ export default function Dashboard() {
                             <button onClick={() => openModal(product, 'saida')} className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all" title="Registrar Saída">
                               <Minus size={18} />
                             </button>
+                            <button onClick={() => openEditModal(product)} className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all" title="Editar Produto">
+                              <Pencil size={18} />
+                            </button>
                           </div>
                         </td>
                       )}
@@ -285,6 +302,13 @@ export default function Dashboard() {
           type={modalType}
           onClose={() => setIsModalOpen(false)}
           onSuccess={handleMovementSuccess}
+        />
+      )}
+      {isEditModalOpen && (
+        <EditProductModal
+          product={selectedProduct}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => { setIsEditModalOpen(false); loadProducts(); }}
         />
       )}
     </div>
