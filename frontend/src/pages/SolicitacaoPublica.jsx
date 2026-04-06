@@ -35,8 +35,11 @@ export default function SolicitacaoPublica() {
   const [tiposPorItem, setTiposPorItem] = useState([[]]); // array de arrays por item
 
 
+  const [adminPhone, setAdminPhone] = useState(null);
+
   useEffect(() => {
     loadCategories();
+    api.get('/configuracoes').then(res => setAdminPhone(res.data?.whatsapp_admin)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -161,6 +164,27 @@ export default function SolicitacaoPublica() {
     }
   };
 
+  const buildWhatsappLink = () => {
+    if (!adminPhone) return '#';
+    const date = new Date().toLocaleString('pt-BR');
+    let itemsText = '';
+    
+    if (isSaida) {
+      itemsText = basket.map(i => `- ${i.quantidade}x ${i.nome}`).join('%0A');
+    } else {
+      itemsText = entradaItens.map(i => `- ${i.quantidade}x ${i.nome_produto_livre}`).join('%0A');
+    }
+
+    const text = `*Nova ${isSaida ? 'Solicitação de Saída' : 'Aviso de Entrada'}*%0A`
+               + `*Data:* ${date}%0A`
+               + `*Nome:* ${nomeSolicitante}%0A`
+               + `*Observação:* ${observacao || 'Nenhuma'}%0A%0A`
+               + `*Itens:*%0A${itemsText}`;
+               
+    const cleanPhone = adminPhone.replace(/\D/g, '');
+    return `https://wa.me/55${cleanPhone}?text=${text}`;
+  };
+
   if (success) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -173,9 +197,22 @@ export default function SolicitacaoPublica() {
               : 'Seu aviso de entrada foi enviado e aguarda confirmação do administrador.'}
           </p>
           <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-8">O administrador será notificado em breve.</p>
-          <button onClick={() => navigate('/')} className="w-full bg-indigo-600 text-white px-6 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-            Voltar ao Início
-          </button>
+          
+          <div className="space-y-3">
+            {adminPhone && (
+              <a 
+                href={buildWhatsappLink()} 
+                target="_blank" 
+                rel="noreferrer"
+                className="w-full flex items-center justify-center bg-green-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-green-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+              >
+                Enviar Comprovante WhatsApp
+              </a>
+            )}
+            <button onClick={() => navigate('/')} className="w-full bg-indigo-600 text-white px-6 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+              Voltar ao Início
+            </button>
+          </div>
         </div>
       </div>
     );

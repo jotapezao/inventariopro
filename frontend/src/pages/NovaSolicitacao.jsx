@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Search, ShoppingCart, Trash2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, CheckCircle, AlertTriangle, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function NovaSolicitacao() {
@@ -11,8 +11,13 @@ export default function NovaSolicitacao() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [adminPhone, setAdminPhone] = useState(null);
   
   const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get('/configuracoes').then(res => setAdminPhone(res.data?.whatsapp_admin)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -66,7 +71,6 @@ export default function NovaSolicitacao() {
         itens: basket.map(item => ({ produto_id: item.produto_id, quantidade: item.quantidade }))
       });
       setSuccess(true);
-      setTimeout(() => navigate('/'), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao enviar solicitação.');
     } finally {
@@ -74,13 +78,44 @@ export default function NovaSolicitacao() {
     }
   };
 
+  const buildWhatsappLink = () => {
+    if (!adminPhone) return '#';
+    const date = new Date().toLocaleString('pt-BR');
+    const itemsText = basket.map(i => `- ${i.quantidade}x ${i.nome}`).join('%0A');
+    const text = `*Nova Solicitação de Saída*%0A`
+               + `*Data:* ${date}%0A`
+               + `*Observação:* ${observacao || 'Nenhuma'}%0A%0A`
+               + `*Itens:*%0A${itemsText}`;
+    const cleanPhone = adminPhone.replace(/\D/g, '');
+    return `https://wa.me/55${cleanPhone}?text=${text}`;
+  };
+
   if (success) {
     return (
-      <div className="max-w-2xl mx-auto mt-20 p-12 bg-white rounded-3xl shadow-xl text-center border border-green-100 animate-in fade-in zoom-in-95 duration-300">
+      <div className="max-w-lg mx-auto mt-20 p-12 bg-white rounded-3xl shadow-xl text-center border border-green-100 animate-in fade-in zoom-in-95 duration-300">
         <CheckCircle className="mx-auto text-green-500 h-20 w-20 mb-6" />
         <h2 className="text-3xl font-extrabold text-gray-800 mb-2 tracking-tight">Solicitação Enviada!</h2>
-        <p className="text-gray-600">Sua solicitação foi registrada com sucesso e aguarda aprovação do administrador.</p>
-        <p className="text-sm text-gray-400 mt-8 font-semibold tracking-wider uppercase">Redirecionando para o início...</p>
+        <p className="text-gray-600 mb-8">Sua solicitação foi registrada com sucesso e aguarda aprovação do administrador.</p>
+
+        <div className="space-y-3">
+          {adminPhone && (
+            <a
+              href={buildWhatsappLink()}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full flex items-center justify-center gap-2 bg-green-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-green-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+              <MessageCircle size={20} />
+              Enviar Comprovante via WhatsApp
+            </a>
+          )}
+          <button
+            onClick={() => navigate('/')}
+            className="w-full bg-indigo-600 text-white px-6 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+          >
+            Voltar ao Início
+          </button>
+        </div>
       </div>
     );
   }
