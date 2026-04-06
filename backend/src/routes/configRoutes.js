@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const configController = require('../controllers/configController');
-const { requireAuth, requireAdmin } = require('../middlewares/authMiddleware');
+const { verifyToken, isAdmin } = require('../middlewares/authMiddleware');
 
 router.get('/:chave', configController.getConfig);
-router.put('/:chave', requireAuth, requireAdmin, configController.updateConfig);
+router.put('/:chave', verifyToken, isAdmin, configController.updateConfig);
 
 module.exports = router;
