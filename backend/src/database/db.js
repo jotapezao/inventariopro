@@ -191,12 +191,22 @@ const createTables = async () => {
       )
     `);
 
-    // Inserir configuração padrão
-    await client.query(`
-      INSERT INTO Configuracoes (chave, valor)
-      VALUES ('whatsapp_notificacao', '')
-      ON CONFLICT (chave) DO NOTHING
-    `);
+    // Inserir configurações padrão
+    const defaultConfigs = [
+      ['whatsapp_notificacao', ''],
+      ['whatsapp_admin', ''],
+      ['nome_sistema', 'Inventário Pro'],
+      ['logo_emoji', '📦'],
+      ['cor_primaria', 'violet'],
+      ['nome_suporte', 'Suporte'],
+      ['email_suporte', ''],
+    ];
+    for (const [chave, valor] of defaultConfigs) {
+      await client.query(
+        `INSERT INTO Configuracoes (chave, valor) VALUES ($1, $2) ON CONFLICT (chave) DO NOTHING`,
+        [chave, valor]
+      );
+    }
 
     await client.query('COMMIT');
     console.log('Tabelas PostgreSQL verificadas/criadas com sucesso.');

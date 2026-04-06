@@ -1,68 +1,153 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap');
 
 /* ─── Custom dark-mode variant (Tailwind v4) ─── */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ─── CSS Variables — Light mode ─── */
 :root {
-  --bg-base:    #f8fafc; /* Slate 50 */
-  --bg-card:    #ffffff;
-  --bg-nav:     rgba(15, 23, 42, 0.85); /* Slate 900 with alpha */
-  --text-main:  #0f172a;
-  --text-sub:   #64748b;
-  --border:     #e2e8f0;
-  --input-bg:   #f8fafc;
+  --bg-base:        #f5f3ff;  /* Violet 50 */
+  --bg-card:        #ffffff;
+  --bg-nav:         rgba(46, 16, 101, 0.92);  /* Violet 950 */
+  --text-main:      #1e1b4b;  /* Indigo 950 */
+  --text-sub:       #6d28d9;  /* Violet 700 */
+  --border:         #ede9fe;  /* Violet 100 */
+  --input-bg:       #faf5ff;  /* Violet 50 */
+  --accent:         #7c3aed;  /* Violet 600 */
+  --accent-light:   #ddd6fe;  /* Violet 200 */
+  --accent-hover:   #6d28d9;  /* Violet 700 */
+  --nav-text:       #ffffff;
+  --card-shadow:    0 4px 24px rgba(124, 58, 237, 0.08);
 }
 
 /* ─── CSS Variables — Dark mode ─── */
 .dark {
-  --bg-base:    #020617; /* Slate 950 */
-  --bg-card:    #0f172a; /* Slate 900 */
-  --bg-nav:     rgba(2, 6, 23, 0.85); /* Slate 950 with alpha */
-  --text-main:  #f8fafc;
-  --text-sub:   #94a3b8;
-  --border:     #1e293b;
-  --input-bg:   #020617;
+  --bg-base:        #0d0a1a;
+  --bg-card:        #1a1333;
+  --bg-nav:         rgba(13, 10, 26, 0.92);
+  --text-main:      #ede9fe;
+  --text-sub:       #a78bfa;
+  --border:         #2e1065;
+  --input-bg:       #1a1333;
+  --accent:         #8b5cf6;
+  --accent-light:   #2e1065;
+  --accent-hover:   #7c3aed;
+  --nav-text:       #ffffff;
+  --card-shadow:    0 4px 24px rgba(0,0,0,0.4);
 }
 
-/* ─── Apply global colors ─── */
+/* ─── Theme color overrides via data-theme ─── */
+[data-theme="indigo"] {
+  --bg-base:      #eef2ff;
+  --bg-nav:       rgba(30, 27, 75, 0.92);
+  --accent:       #4f46e5;
+  --accent-light: #c7d2fe;
+  --accent-hover: #4338ca;
+  --text-sub:     #4338ca;
+  --border:       #e0e7ff;
+}
+[data-theme="emerald"] {
+  --bg-base:      #ecfdf5;
+  --bg-nav:       rgba(6, 78, 59, 0.92);
+  --accent:       #059669;
+  --accent-light: #a7f3d0;
+  --accent-hover: #047857;
+  --text-sub:     #047857;
+  --border:       #d1fae5;
+}
+[data-theme="rose"] {
+  --bg-base:      #fff1f2;
+  --bg-nav:       rgba(136, 19, 55, 0.92);
+  --accent:       #e11d48;
+  --accent-light: #fecdd3;
+  --accent-hover: #be123c;
+  --text-sub:     #be123c;
+  --border:       #ffe4e6;
+}
+[data-theme="amber"] {
+  --bg-base:      #fffbeb;
+  --bg-nav:       rgba(120, 53, 15, 0.92);
+  --accent:       #d97706;
+  --accent-light: #fde68a;
+  --accent-hover: #b45309;
+  --text-sub:     #b45309;
+  --border:       #fef3c7;
+}
+[data-theme="violet"] {
+  --bg-base:        #f5f3ff;
+  --bg-nav:         rgba(46, 16, 101, 0.92);
+  --accent:         #7c3aed;
+  --accent-light:   #ddd6fe;
+  --accent-hover:   #6d28d9;
+  --text-sub:       #6d28d9;
+  --border:         #ede9fe;
+}
+
+/* ─── Apply global text/bg ─── */
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-base);
   color: var(--text-main);
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.25s, color 0.25s;
 }
 
-/* ─── Dark mode overrides for common Tailwind classes ─── */
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--accent-light); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ─── Dark mode common overrides ─── */
 .dark .bg-white          { background-color: var(--bg-card) !important; }
-.dark .bg-gray-50        { background-color: #1e293b !important; }
-.dark .bg-gray-100       { background-color: #1e293b !important; }
-.dark .bg-gray-50\/50    { background-color: rgba(30,41,59,0.5) !important; }
+.dark .bg-gray-50        { background-color: #1a1333 !important; }
+.dark .bg-gray-100       { background-color: #2e1065 !important; }
+.dark .bg-gray-50\/50    { background-color: rgba(26,19,51,0.5) !important; }
 .dark .border-gray-100   { border-color: var(--border) !important; }
 .dark .border-gray-200   { border-color: var(--border) !important; }
-.dark .border-gray-300   { border-color: var(--border) !important; }
+.dark .border-gray-300   { border-color: #2e1065 !important; }
 .dark .text-gray-800     { color: var(--text-main) !important; }
-.dark .text-gray-700     { color: #cbd5e1 !important; }
-.dark .text-gray-600     { color: #94a3b8 !important; }
-.dark .text-gray-500     { color: #64748b !important; }
-.dark .text-gray-400     { color: #475569 !important; }
-.dark .text-gray-900     { color: #f1f5f9 !important; }
-.dark .divide-gray-200   > * + * { border-color: #334155 !important; }
-.dark .divide-gray-100   > * + * { border-color: #1e293b !important; }
-.dark .hover\:bg-gray-50:hover   { background-color: #263040 !important; }
-.dark .hover\:bg-gray-50\/50:hover { background-color: rgba(38,48,64,0.5) !important; }
-.dark input,
-.dark select,
-.dark textarea {
-  background-color: #0f172a !important;
-  color: #f1f5f9 !important;
-  border-color: #334155 !important;
+.dark .text-gray-700     { color: #c4b5fd !important; }
+.dark .text-gray-600     { color: #a78bfa !important; }
+.dark .text-gray-500     { color: #7c3aed !important; }
+.dark .text-gray-400     { color: #6d28d9 !important; }
+.dark .text-gray-900     { color: #ede9fe !important; }
+.dark .divide-gray-200 > * + * { border-color: #2e1065 !important; }
+.dark .divide-gray-100 > * + * { border-color: #1a1333 !important; }
+.dark .hover\:bg-gray-50:hover { background-color: #231942 !important; }
+.dark input, .dark select, .dark textarea {
+  background-color: #1a1333 !important;
+  color: #ede9fe !important;
+  border-color: #2e1065 !important;
 }
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #475569 !important;
+.dark input::placeholder, .dark textarea::placeholder { color: #6d28d9 !important; }
+.dark .shadow, .dark .shadow-sm, .dark .shadow-md { box-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+
+/* ─── Utility classes ─── */
+.card-shadow { box-shadow: var(--card-shadow); }
+.btn-accent {
+  background-color: var(--accent);
+  color: #fff;
+  transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
 }
-.dark .shadow,
-.dark .shadow-sm,
-.dark .shadow-md { box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+.btn-accent:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(124,58,237,0.3);
+}
+.input-base {
+  background-color: var(--input-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+  width: 100%;
+}
+.input-base:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+  background-color: #fff;
+}
+.dark .input-base:focus { background-color: #1a1333; }

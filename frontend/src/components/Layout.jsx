@@ -1,80 +1,119 @@
 import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { PackageOpen, LogOut, PlusSquare, Settings, HelpCircle, LogIn, Sun, Moon, History, FileBox } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useAppConfig } from '../contexts/AppConfigContext';
+import { LogOut, PlusSquare, Settings, HelpCircle, LogIn, Sun, Moon, History, FileBox, User } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 export const Layout = ({ children }) => {
   const { user, logout, signed } = useContext(AuthContext);
   const { theme, toggleTheme } = useTheme();
+  const { config } = useAppConfig();
+  const location = useLocation();
+
+  const navLink = (to, label, icon) => {
+    const active = location.pathname === to;
+    return (
+      <Link
+        to={to}
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all text-sm
+          ${active
+            ? 'bg-white/20 text-white shadow-sm'
+            : 'text-white/80 hover:text-white hover:bg-white/10'
+          }`}
+      >
+        {icon}
+        <span className="hidden sm:inline">{label}</span>
+      </Link>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ backgroundColor: 'var(--bg-base)' }}>
-    {/* Navbar */}
-      <header style={{ backgroundColor: 'var(--bg-nav)' }} className="shadow-md sticky top-0 z-50 backdrop-blur-md">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-base)' }}>
+
+      {/* Navbar */}
+      <header
+        style={{ backgroundColor: 'var(--bg-nav)' }}
+        className="sticky top-0 z-50 backdrop-blur-md border-b border-white/10"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-between py-3 items-center gap-4">
+          <div className="flex justify-between items-center h-16 gap-4">
 
-            <div className="flex-shrink-0 flex items-center text-white cursor-pointer" onClick={() => window.location.href = '/'}>
-              <PackageOpen className="h-8 w-8 mr-2" />
-              <span className="font-bold text-xl tracking-tight">Inventário Pro</span>
-            </div>
+            {/* Logo + Nome */}
+            <Link to="/" className="flex-shrink-0 flex items-center gap-2.5 group">
+              <span className="text-2xl leading-none select-none">{config.logo_emoji || '📦'}</span>
+              <span className="font-bold text-lg text-white tracking-tight group-hover:opacity-80 transition-opacity">
+                {config.nome_sistema || 'Inventário Pro'}
+              </span>
+            </Link>
 
-            <nav className="flex flex-wrap items-center gap-1 w-full lg:w-auto order-3 lg:order-2 justify-center lg:justify-start">
-              <Link to="/" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
-                <FileBox className="h-4 w-4 mr-1 hidden sm:block" /> Estoque
-              </Link>
-              <Link to="/solicitar-saida" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm">
-                Solicitar Material
-              </Link>
+            {/* Nav Links */}
+            <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+              {navLink('/', 'Estoque', <FileBox size={16} />)}
+              {navLink('/solicitar-saida', 'Solicitar', <PlusSquare size={16} />)}
               {user?.tipo === 'Administrador' && (
                 <>
-                  <Link to="/gerenciar-solicitacoes" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm">
-                    Aprovações
-                  </Link>
-                  <Link to="/cadastrar-produto" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
-                    <PlusSquare className="h-4 w-4 mr-1" /> Produto
-                  </Link>
-                  <Link to="/historico" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
-                    <History className="h-4 w-4 mr-1" /> Histórico
-                  </Link>
-                  <Link to="/configuracoes" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
-                    <Settings className="h-4 w-4 mr-1" /> Configs
-                  </Link>
+                  {navLink('/gerenciar-solicitacoes', 'Aprovações', null)}
+                  {navLink('/cadastrar-produto', 'Produto', <PlusSquare size={15} />)}
+                  {navLink('/historico', 'Histórico', <History size={15} />)}
+                  {navLink('/configuracoes', 'Config', <Settings size={15} />)}
                 </>
               )}
             </nav>
 
-            <div className="flex items-center gap-2 text-white order-2 lg:order-3">
-              {/* Toggle Modo Escuro/Claro */}
+            {/* Right side */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={toggleTheme}
                 title={theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-                className="p-2 rounded-md hover:bg-white/10 transition"
+                className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all"
               >
-                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </button>
 
               {signed ? (
-                <>
-                  <span className="hidden sm:inline-block text-sm opacity-90">Olá, {user?.nome}</span>
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                      style={{ backgroundColor: 'var(--accent)' }}>
+                      {user?.nome?.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm text-white/90 font-medium">{user?.nome?.split(' ')[0]}</span>
+                  </div>
                   <button
                     onClick={logout}
-                    className="flex items-center hover:bg-red-500 px-3 py-2 rounded-md transition bg-white/10 font-semibold text-sm"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white/80 hover:text-white hover:bg-red-500/30 transition-all text-sm font-medium"
+                    title="Sair"
                   >
-                    <LogOut className="h-4 w-4 mr-1" /> Sair
+                    <LogOut size={16} />
+                    <span className="hidden sm:inline">Sair</span>
                   </button>
-                </>
+                </div>
               ) : (
                 <Link
                   to="/login"
-                  className="flex items-center hover:bg-green-500 px-3 py-2 rounded-md transition bg-green-600 font-semibold text-sm"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-sm transition-all text-white shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                  style={{ backgroundColor: 'var(--accent)' }}
                 >
-                  <LogIn className="h-4 w-4 mr-1" /> Entrar
+                  <LogIn size={16} /> Entrar
                 </Link>
               )}
             </div>
           </div>
+        </div>
+
+        {/* Mobile nav */}
+        <div className="md:hidden border-t border-white/10 px-4 py-2 flex gap-1 overflow-x-auto">
+          {navLink('/', 'Estoque', <FileBox size={15} />)}
+          {navLink('/solicitar-saida', 'Solicitar', null)}
+          {user?.tipo === 'Administrador' && (
+            <>
+              {navLink('/gerenciar-solicitacoes', 'Aprovações', null)}
+              {navLink('/cadastrar-produto', 'Produto', null)}
+              {navLink('/historico', 'Histórico', null)}
+              {navLink('/configuracoes', 'Config', <Settings size={14} />)}
+            </>
+          )}
         </div>
       </header>
 
@@ -83,22 +122,32 @@ export const Layout = ({ children }) => {
         {children}
       </main>
 
+      {/* Footer */}
+      <footer className="border-t py-4 px-6 text-center text-xs" style={{ borderColor: 'var(--border)', color: 'var(--text-sub)' }}>
+        {config.nome_sistema || 'Inventário Pro'} &mdash; {new Date().getFullYear()}
+        {config.email_suporte && (
+          <span className="ml-3 opacity-60">{config.email_suporte}</span>
+        )}
+      </footer>
+
       {/* Botão de Suporte Flutuante */}
-      <a
-        href="https://wa.me/5565992859585"
-        target="_blank"
-        rel="noreferrer"
-        className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition flex items-center justify-center cursor-pointer group z-50"
-      >
-        <HelpCircle size={24} />
-        <div className="absolute bottom-14 right-0 border border-gray-200 shadow-xl rounded-lg p-3 w-64 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-sm"
-          style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>
-          <strong className="block text-blue-600 mb-1">Suporte do Sistema</strong>
-          João Paulo Fernandes<br />
-          WhatsApp: (65) 99285-9585<br />
-          joaopaulo@modaverao.com.br
-        </div>
-      </a>
+      {config.whatsapp_notificacao && (
+        <a
+          href={`https://wa.me/55${(config.whatsapp_notificacao || '').replace(/\D/g, '')}`}
+          target="_blank"
+          rel="noreferrer"
+          className="fixed bottom-6 right-6 p-4 rounded-full shadow-xl hover:shadow-2xl text-white transition-all hover:-translate-y-1 flex items-center justify-center cursor-pointer group z-50"
+          style={{ backgroundColor: 'var(--accent)' }}
+        >
+          <HelpCircle size={24} />
+          <div className="absolute bottom-16 right-0 border shadow-xl rounded-2xl p-4 w-64 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-sm"
+            style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', borderColor: 'var(--border)' }}>
+            <strong className="block mb-1" style={{ color: 'var(--accent)' }}>Suporte</strong>
+            {config.nome_suporte && <span className="block">{config.nome_suporte}</span>}
+            {config.email_suporte && <span className="block text-xs opacity-70">{config.email_suporte}</span>}
+          </div>
+        </a>
+      )}
     </div>
   );
 };
