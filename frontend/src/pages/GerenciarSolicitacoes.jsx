@@ -12,6 +12,7 @@ export default function GerenciarSolicitacoes() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('pendente');
   const [globalWhatsapp, setGlobalWhatsapp] = useState('');
+  const [successWhatsappUrl, setSuccessWhatsappUrl] = useState('');
 
   useEffect(() => {
     loadSolicitations();
@@ -56,7 +57,7 @@ export default function GerenciarSolicitacoes() {
           const itensTexto = selectedRequest.itens?.map(i => `- ${i.nome} (${i.quantidade} ${i.unidade || ''})`).join('\n') || '';
           const msg = `✅ *Solicitação Aprovada (#${id})*\n\n*Solicitante:* ${selectedRequest.requerente}\n*Tipo:* ${selectedRequest.tipo_solicitacao?.toUpperCase() || 'SAÍDA'}\n*Itens:*\n${itensTexto}\n\n_Registrado via API_`;
           const url = `https://wa.me/${numToUse}?text=${encodeURIComponent(msg)}`;
-          window.open(url, '_blank', 'noopener,noreferrer');
+          setSuccessWhatsappUrl(url);
         }
       }
 
@@ -194,6 +195,36 @@ export default function GerenciarSolicitacoes() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de Sucesso / Confirmação do WhatsApp */}
+      {successWhatsappUrl && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-500 bg-opacity-75">
+          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all max-w-lg w-full p-6 text-center animate-in fade-in zoom-in duration-200">
+             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                 <span className="text-3xl">✅</span>
+             </div>
+             <h3 className="text-xl font-bold text-gray-900 mb-2">Solicitação Aprovada!</h3>
+             <p className="text-sm text-gray-500 mb-6">Deseja enviar o comprovante desta operação via WhatsApp para o número configurado do administrador?</p>
+             <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => {
+                    window.open(successWhatsappUrl, '_blank', 'noopener,noreferrer');
+                    setSuccessWhatsappUrl('');
+                  }}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-md"
+                >
+                  Enviar WhatsApp
+                </button>
+                <button
+                  onClick={() => setSuccessWhatsappUrl('')}
+                  className="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-lg transition"
+                >
+                  Agora Não
+                </button>
+             </div>
+          </div>
         </div>
       )}
     </div>

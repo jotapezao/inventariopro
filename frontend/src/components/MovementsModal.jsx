@@ -6,6 +6,7 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [globalWhatsapp, setGlobalWhatsapp] = useState('');
+  const [successWhatsappUrl, setSuccessWhatsappUrl] = useState('');
 
   useEffect(() => {
     api.get('/config/whatsapp_notificacao')
@@ -38,7 +39,8 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
         if (numToUse) {
           const msg = `📦 *Nova Movimentação de Estoque*\n\n*Tipo:* ${isEntrada ? 'Entrada' : 'Saída'}\n*Produto:* ${product.nome}\n*Quantidade:* ${quantidade} ${product.unidade}\n\n_Registrado via API_`;
           const url = `https://wa.me/${numToUse}?text=${encodeURIComponent(msg)}`;
-          window.open(url, '_blank', 'noopener,noreferrer');
+          setSuccessWhatsappUrl(url);
+          return; // Para a execução para mostrar a tela de sucesso
         }
       }
 
@@ -60,6 +62,39 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          {successWhatsappUrl ? (
+            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+              <div className="sm:flex sm:items-start text-center sm:text-left flex-col items-center">
+                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4 sm:mx-0">
+                  <span className="text-3xl">✅</span>
+                </div>
+                <h3 className="text-xl leading-6 font-bold text-gray-900 mb-2">
+                  Movimentação Concluída!
+                </h3>
+                <p className="text-sm text-gray-500 mb-6">
+                  Deseja enviar o comprovante desta operação via WhatsApp para o número configurado do administrador?
+                </p>
+                
+                <div className="w-full flex gap-3 mt-2 sm:mt-4">
+                  <button
+                    onClick={() => {
+                      window.open(successWhatsappUrl, '_blank', 'noopener,noreferrer');
+                      onSuccess();
+                    }}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-md"
+                  >
+                    Enviar WhatsApp
+                  </button>
+                  <button
+                    onClick={onSuccess}
+                    className="flex-1 border bg-white border-gray-300 hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-lg transition"
+                  >
+                    Agora Não
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit}>
             <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                <div className="sm:flex sm:items-start">
@@ -123,6 +158,7 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>
