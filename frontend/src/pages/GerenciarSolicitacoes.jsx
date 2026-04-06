@@ -11,9 +11,13 @@ export default function GerenciarSolicitacoes() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('pendente');
+  const [globalWhatsapp, setGlobalWhatsapp] = useState('');
 
   useEffect(() => {
     loadSolicitations();
+    api.get('/config/whatsapp_notificacao')
+      .then(res => setGlobalWhatsapp(res.data?.valor || ''))
+      .catch(() => {});
   }, [activeTab]);
 
   const loadSolicitations = async () => {
@@ -45,6 +49,17 @@ export default function GerenciarSolicitacoes() {
     setActionLoading(true);
     try {
       await api.put(`/solicitacoes/${id}/status`, { status });
+      
+      if (status === 'aprovada' && globalWhatsapp && selectedRequest) {
+        const numToUse = globalWhatsapp.replace(/\D/g, '');
+        if (numToUse) {
+          const itensTexto = selectedRequest.itens?.map(i => `- ${i.nome} (${i.quantidade} ${i.unidade || ''})`).join('\n') || '';
+          const msg = `✅ *Solicitação Aprovada (#${id})*\n\n*Solicitante:* ${selectedRequest.requerente}\n*Tipo:* ${selectedRequest.tipo_solicitacao?.toUpperCase() || 'SAÍDA'}\n*Itens:*\n${itensTexto}\n\n_Registrado via API_`;
+          const url = `https://wa.me/${numToUse}?text=${encodeURIComponent(msg)}`;
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      }
+
       setSelectedRequest(null);
       loadSolicitations();
     } catch (err) {

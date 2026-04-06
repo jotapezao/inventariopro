@@ -182,7 +182,21 @@ const createTables = async () => {
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS categoria_livre TEXT`);
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS tipo_livre TEXT`);
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS foto TEXT`);
+    // Tabela Configuracoes
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS Configuracoes (
+        id SERIAL PRIMARY KEY,
+        chave TEXT UNIQUE NOT NULL,
+        valor TEXT
+      )
+    `);
 
+    // Inserir configuração padrão
+    await client.query(`
+      INSERT INTO Configuracoes (chave, valor)
+      VALUES ('whatsapp_notificacao', '')
+      ON CONFLICT (chave) DO NOTHING
+    `);
 
     await client.query('COMMIT');
     console.log('Tabelas PostgreSQL verificadas/criadas com sucesso.');

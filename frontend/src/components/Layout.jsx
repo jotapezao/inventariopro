@@ -10,19 +10,19 @@ export const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col" style={{ backgroundColor: 'var(--bg-base)' }}>
-      {/* Navbar */}
+    {/* Navbar */}
       <header style={{ backgroundColor: 'var(--bg-nav)' }} className="shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
+          <div className="flex flex-wrap justify-between py-3 items-center gap-4">
 
             <div className="flex-shrink-0 flex items-center text-white cursor-pointer" onClick={() => window.location.href = '/'}>
               <PackageOpen className="h-8 w-8 mr-2" />
               <span className="font-bold text-xl tracking-tight">Inventário Pro</span>
             </div>
 
-            <nav className="flex items-center space-x-1">
+            <nav className="flex flex-wrap items-center gap-1 w-full lg:w-auto order-3 lg:order-2 justify-center lg:justify-start">
               <Link to="/" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm flex items-center">
-                <FileBox className="h-4 w-4 mr-1" /> Estoque de Materiais
+                <FileBox className="h-4 w-4 mr-1 hidden sm:block" /> Estoque
               </Link>
               <Link to="/solicitar-saida" className="text-white hover:bg-white/10 px-3 py-2 rounded-md font-medium transition text-sm">
                 Solicitar Material
@@ -45,7 +45,7 @@ export const Layout = ({ children }) => {
               )}
             </nav>
 
-            <div className="flex items-center space-x-2 text-white">
+            <div className="flex items-center gap-2 text-white order-2 lg:order-3">
               {/* Toggle Modo Escuro/Claro */}
               <button
                 onClick={toggleTheme}

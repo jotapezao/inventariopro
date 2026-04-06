@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
 
 export function MovementsModal({ product, type, onClose, onSuccess }) {
   const [quantidade, setQuantidade] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [globalWhatsapp, setGlobalWhatsapp] = useState('');
+
+  useEffect(() => {
+    api.get('/config/whatsapp_notificacao')
+      .then(res => setGlobalWhatsapp(res.data?.valor || ''))
+      .catch(() => {});
+  }, []);
 
   const isEntrada = type === 'entrada';
 
@@ -25,6 +32,16 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
         tipo,
         quantidade: parseInt(quantidade)
       });
+      
+      if (globalWhatsapp) {
+        const numToUse = globalWhatsapp.replace(/\D/g, '');
+        if (numToUse) {
+          const msg = `📦 *Nova Movimentação de Estoque*\n\n*Tipo:* ${isEntrada ? 'Entrada' : 'Saída'}\n*Produto:* ${product.nome}\n*Quantidade:* ${quantidade} ${product.unidade}\n\n_Registrado via API_`;
+          const url = `https://wa.me/${numToUse}?text=${encodeURIComponent(msg)}`;
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      }
+
       onSuccess();
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao registrar movimentação.');

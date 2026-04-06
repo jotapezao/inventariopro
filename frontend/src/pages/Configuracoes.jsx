@@ -3,7 +3,7 @@ import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
 import {
   Users, AlertCircle, Trash2, UserPlus, CheckCircle,
-  XCircle, Tag, Layers, ChevronDown, KeyRound, Eye, EyeOff, X, Plus
+  XCircle, Tag, Layers, ChevronDown, KeyRound, Eye, EyeOff, X, Plus, MessageCircle, Settings
 } from 'lucide-react';
 
 // ─── Componente de Modal de Troca de Senha ───
@@ -101,6 +101,9 @@ export default function Configuracoes() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
     if (user?.tipo === 'Administrador') loadData();
@@ -113,9 +116,16 @@ export default function Configuracoes() {
 
   const loadData = async () => {
     try {
-      const [usersRes, catRes] = await Promise.all([api.get('/auth/usuarios'), api.get('/categorias')]);
+      const [usersRes, catRes, configRes] = await Promise.all([
+        api.get('/auth/usuarios'), 
+        api.get('/categorias'),
+        api.get('/config/whatsapp_notificacao').catch(() => ({ data: { valor: '' } }))
+      ]);
       setUsers(usersRes.data);
       setCategories(catRes.data);
+      if (configRes?.data?.valor) {
+        setWhatsappNumber(configRes.data.valor);
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -129,6 +139,19 @@ export default function Configuracoes() {
   const showMsg = (type, text) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+  };
+
+  // ─── Configurações Globais ───
+  const handleSaveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      await api.put('/config/whatsapp_notificacao', { valor: whatsappNumber });
+      showMsg('success', 'Número de WhatsApp salvo com sucesso!');
+    } catch (err) {
+      showMsg('error', err.response?.data?.message || 'Erro ao salvar configuração.');
+    } finally {
+      setSavingConfig(false);
+    }
   };
 
   // ─── Usuários ───
@@ -222,6 +245,38 @@ export default function Configuracoes() {
             {message.text}
           </div>
         )}
+      </div>
+
+      {/* ─── Configurações Gerais ─── */}
+      <div className={`${cardCls} mb-8`} style={cardStyle}>
+        <h3 className="text-lg font-bold flex items-center gap-2 mb-4" style={{ color: 'var(--text-main)' }}>
+          <Settings size={20} className="text-gray-600" /> Configurações Gerais
+        </h3>
+        <div className="max-w-md">
+          <label className="block text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'var(--text-sub)' }}>
+            <MessageCircle size={16} className="text-green-500" /> WhatsApp para Notificações (Entradas/Saídas)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Ex: 5511999999999"
+              value={whatsappNumber}
+              onChange={e => setWhatsappNumber(e.target.value)}
+              className={inputCls}
+              style={inputStyle}
+            />
+            <button 
+              onClick={handleSaveConfig} 
+              disabled={savingConfig}
+              className="bg-green-600 text-white px-4 rounded-lg hover:bg-green-700 font-bold transition flex-shrink-0 disabled:opacity-50"
+            >
+              {savingConfig ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+          <p className="text-xs mt-2" style={{ color: 'var(--text-sub)' }}>
+             Informe o número completo (DDI + DDD + Número) apenas com números. Ex: 5511988887777.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
