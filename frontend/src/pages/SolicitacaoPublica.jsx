@@ -163,17 +163,17 @@ export default function SolicitacaoPublica() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-10 text-center border-t-4 border-green-500">
-          <CheckCircle className="mx-auto text-green-500 h-16 w-16 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Solicitação Enviada!</h2>
-          <p className="text-gray-600 mb-2">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-10 text-center border border-green-100 animate-in fade-in zoom-in-95 duration-300">
+          <CheckCircle className="mx-auto text-green-500 h-20 w-20 mb-6" />
+          <h2 className="text-3xl font-extrabold text-gray-800 mb-3 tracking-tight">Solicitação Enviada!</h2>
+          <p className="text-gray-600 mb-4 font-medium">
             {isSaida
               ? 'Sua solicitação de saída foi enviada e aguarda aprovação do administrador.'
               : 'Seu aviso de entrada foi enviado e aguarda confirmação do administrador.'}
           </p>
-          <p className="text-sm text-gray-400 italic mb-6">O administrador será notificado em breve.</p>
-          <button onClick={() => navigate('/')} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-8">O administrador será notificado em breve.</p>
+          <button onClick={() => navigate('/')} className="w-full bg-indigo-600 text-white px-6 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
             Voltar ao Início
           </button>
         </div>
@@ -181,16 +181,16 @@ export default function SolicitacaoPublica() {
     );
   }
 
-  const selectCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none";
-  const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none";
+  const selectCls = "w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none appearance-none transition-all";
+  const inputCls = "w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all";
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Topo */}
-      <div className={`${isSaida ? 'bg-red-600' : 'bg-green-700'} text-white py-6 px-4`}>
+      <div className={`bg-gradient-to-r ${isSaida ? 'from-red-600 to-rose-700' : 'from-emerald-600 to-teal-700'} text-white py-8 px-4 shadow-md`}>
         <div className="max-w-5xl mx-auto flex items-center gap-4">
-          <button onClick={() => navigate('/')} className="hover:bg-white/10 p-2 rounded-lg transition">
-            <ArrowLeft size={20} />
+          <button onClick={() => navigate('/')} className="bg-white/10 hover:bg-white/20 p-3 rounded-full transition backdrop-blur-sm">
+            <ArrowLeft size={24} />
           </button>
           <div>
             <div className="flex items-center gap-2">
@@ -208,17 +208,18 @@ export default function SolicitacaoPublica() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto p-4 md:p-6">
+      <div className="max-w-5xl mx-auto p-4 md:p-6 -mt-6">
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Nome do solicitante */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <User size={18} className="text-blue-600" /> Identificação
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+            <h3 className="font-extrabold text-gray-800 mb-6 flex items-center gap-2 text-lg">
+              <User size={20} className="text-indigo-600" /> Identificação
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Seu Nome *</label>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Seu Nome *</label>
                 <input
                   type="text"
                   placeholder="Ex: João da Silva"
@@ -229,7 +230,7 @@ export default function SolicitacaoPublica() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-2">Observações</label>
                 <input
                   type="text"
                   placeholder="Ex: Para obra da rua Central"
@@ -245,11 +246,11 @@ export default function SolicitacaoPublica() {
           {isSaida && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Busca */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="font-bold text-gray-800 mb-4">Buscar Produtos</h3>
+              <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8">
+                <h3 className="font-extrabold text-gray-800 mb-6 text-lg">Buscar Produtos</h3>
 
                 {/* Filtros */}
-                <div className="flex gap-2 mb-3">
+                <div className="flex gap-3 mb-4">
                   <div className="relative flex-1">
                     <select value={filterCategoria} onChange={handleCategoriaChange} className={selectCls + " pr-7"}>
                       <option value="">Categoria</option>
@@ -446,8 +447,8 @@ export default function SolicitacaoPublica() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full font-bold py-4 rounded-xl shadow-lg transition text-white disabled:opacity-50 text-lg
-              ${isSaida ? 'bg-red-600 hover:bg-red-700' : 'bg-green-700 hover:bg-green-800'}`}
+            className={`w-full font-extrabold py-5 rounded-2xl shadow-xl transition-all text-white disabled:opacity-50 text-lg hover:-translate-y-0.5
+              ${isSaida ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
           >
             {loading ? 'Enviando...' : isSaida ? '📤 Confirmar Solicitação de Saída' : '📥 Confirmar Aviso de Entrada'}
           </button>

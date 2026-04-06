@@ -76,11 +76,11 @@ export default function NovaSolicitacao() {
 
   if (success) {
     return (
-      <div className="max-w-2xl mx-auto mt-20 p-10 bg-white rounded-xl shadow-lg text-center border-t-4 border-green-500">
-        <CheckCircle className="mx-auto text-green-500 h-16 w-16 mb-4" />
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Solicitação Enviada!</h2>
+      <div className="max-w-2xl mx-auto mt-20 p-12 bg-white rounded-3xl shadow-xl text-center border border-green-100 animate-in fade-in zoom-in-95 duration-300">
+        <CheckCircle className="mx-auto text-green-500 h-20 w-20 mb-6" />
+        <h2 className="text-3xl font-extrabold text-gray-800 mb-2 tracking-tight">Solicitação Enviada!</h2>
         <p className="text-gray-600">Sua solicitação foi registrada com sucesso e aguarda aprovação do administrador.</p>
-        <p className="text-sm text-gray-400 mt-6 italic">Redirecionando para o início...</p>
+        <p className="text-sm text-gray-400 mt-8 font-semibold tracking-wider uppercase">Redirecionando para o início...</p>
       </div>
     );
   }
@@ -96,14 +96,14 @@ export default function NovaSolicitacao() {
         
         {/* Lado Esquerdo: Busca e Seleção */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-700 mb-4">1. Buscar Itens</h3>
+          <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+            <h3 className="text-xl font-extrabold text-gray-800 mb-5">1. Buscar Itens</h3>
             <div className="relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+              <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
               <input 
                 type="text" 
                 placeholder="Pesquisar grampo, fita, material..." 
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-gray-700 shadow-sm hover:border-gray-300"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -131,8 +131,9 @@ export default function NovaSolicitacao() {
 
         {/* Lado Direito: Cesta e Observação */}
         <div className="space-y-6">
-          <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-md border border-blue-50">
-            <h3 className="text-lg font-bold text-gray-700 mb-4">2. Itens Selecionados</h3>
+          <form onSubmit={handleSubmit} className="bg-white p-8 rounded-3xl shadow-xl border border-indigo-50 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-blue-500"></div>
+            <h3 className="text-xl font-extrabold text-gray-800 mb-6">2. Itens Selecionados</h3>
             
             {basket.length === 0 ? (
               <div className="py-10 text-center text-gray-400 border-2 border-dashed border-gray-100 rounded-lg">
@@ -149,7 +150,7 @@ export default function NovaSolicitacao() {
                     <div className="w-24">
                       <input 
                         type="number" 
-                        className="w-full text-center border rounded py-1"
+                        className="w-full text-center border-gray-200 bg-white rounded-lg py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm font-bold text-gray-700"
                         value={item.quantidade}
                         onChange={e => updateQuantity(item.produto_id, e.target.value)}
                       />
@@ -162,12 +163,12 @@ export default function NovaSolicitacao() {
               </div>
             )}
 
-            <div className="mt-8 border-t pt-6">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Observações / Requerente</label>
+            <div className="mt-8 border-t border-gray-100 pt-8">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Observações / Requerente</label>
               <textarea 
                 rows="3" 
                 placeholder="Ex: Saída para obra Central - Nome: João da Silva"
-                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none transition-all shadow-sm resize-none"
                 value={observacao}
                 onChange={e => setObservacao(e.target.value)}
                 required
@@ -183,7 +184,7 @@ export default function NovaSolicitacao() {
             <button 
               type="submit" 
               disabled={loading || basket.length === 0}
-              className="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition disabled:opacity-50"
+              className="w-full mt-8 bg-indigo-600 text-white font-extrabold py-4 rounded-xl shadow-md hover:shadow-lg hover:bg-indigo-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 text-lg"
             >
               {loading ? 'Enviando...' : 'Confirmar Solicitação'}
             </button>

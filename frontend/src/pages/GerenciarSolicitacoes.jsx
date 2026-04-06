@@ -93,42 +93,55 @@ export default function GerenciarSolicitacoes() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 mb-6 gap-8">
+      <div className="flex border-b border-gray-200 mb-8 gap-8 px-1">
         {['pendente', 'aprovada', 'rejeitada'].map(status => (
           <button 
             key={status}
             onClick={() => setActiveTab(status)}
-            className={`pb-4 px-2 text-sm font-bold uppercase tracking-wider transition border-b-2 ${activeTab === status ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+            className={`pb-4 px-2 text-sm font-bold uppercase tracking-widest transition-all duration-200 border-b-2 relative ${activeTab === status ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-400 hover:text-gray-700 hover:border-gray-300'}`}
           >
             {status === 'pendente' ? 'Pendentes' : status === 'aprovada' ? 'Aprovadas' : 'Rejeitadas'}
+            {activeTab === status && <span className="absolute bottom-0 left-0 w-full h-[3px] bg-indigo-600 rounded-t-md"></span>}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="py-20 text-center text-gray-400">Carregando solicitações...</div>
+        <div className="py-20 flex flex-col items-center justify-center text-gray-400 animate-pulse">
+           <RefreshCw size={32} className="animate-spin mb-4 text-indigo-400" />
+           <p>Carregando solicitações...</p>
+        </div>
       ) : solicitations.length === 0 ? (
-        <div className="py-20 text-center text-gray-400 bg-white rounded-xl border-2 border-dashed">Nenhuma solicitação encontrada nesta categoria.</div>
+        <div className="py-24 text-center text-gray-500 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col items-center">
+           <ClipboardList size={48} className="text-gray-200 mb-4" />
+           <p className="font-medium text-lg">Nenhuma solicitação encontrada.</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {solicitations.map(s => (
-            <div key={s.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
               <div 
-                className="p-5 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition"
+                className="p-5 sm:px-8 sm:py-6 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors"
                 onClick={() => handleDetails(s.id)}
               >
-                <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-lg ${s.status === 'pendente' ? 'bg-orange-100 text-orange-600' : s.status === 'aprovada' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                    <Clock size={20} />
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <div className={`p-3 rounded-2xl ${s.status === 'pendente' ? 'bg-orange-50 text-orange-600 border border-orange-100' : s.status === 'aprovada' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
+                    <Clock size={24} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-800">Solicitação #{s.id} - {s.requerente}</h4>
-                    <span className="text-xs text-gray-400">{new Date(s.data_solicitacao).toLocaleString('pt-BR')}</span>
+                    <h4 className="text-base sm:text-lg font-bold text-gray-800 tracking-tight">Solicitação #{s.id} - {s.requerente}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                       <span className="text-xs font-semibold text-gray-500">{new Date(s.data_solicitacao).toLocaleString('pt-BR')}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full uppercase">{s.status}</span>
-                  {selectedRequest?.id === s.id ? <ChevronUp /> : <ChevronDown />}
+                  <span className={`hidden sm:inline-flex px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full border ${s.status === 'pendente' ? 'bg-orange-50 text-orange-600 border-orange-200' : s.status === 'aprovada' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                    {s.status}
+                  </span>
+                  <div className="text-gray-400">
+                    {selectedRequest?.id === s.id ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                  </div>
                 </div>
               </div>
 
@@ -157,26 +170,27 @@ export default function GerenciarSolicitacoes() {
 
                     {/* Ações da Solicitação */}
                     {s.status === 'pendente' && (
-                      <div className="bg-white p-6 rounded-xl shadow-inner flex flex-col justify-center border-l-4 border-blue-500">
-                        <h5 className="text-center font-bold text-gray-800 mb-6">Decisão do Administrador</h5>
+                      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-indigo-100 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-2 h-full bg-indigo-500"></div>
+                        <h5 className="text-center font-bold text-gray-800 mb-6 tracking-tight text-lg">Decisão do Administrador</h5>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <button 
                             disabled={actionLoading}
                             onClick={() => updateStatus(s.id, 'aprovada')}
-                            className="bg-green-600 text-white font-bold py-4 rounded-xl flex items-center justify-center hover:bg-green-700 transition shadow-lg shadow-green-100 disabled:opacity-50"
+                            className="bg-green-600 text-white font-bold py-3 sm:py-4 rounded-xl flex items-center justify-center hover:bg-green-700 transition shadow-sm hover:shadow-md disabled:opacity-50 hover:-translate-y-0.5"
                           >
                             <CheckCircle size={20} className="mr-2" /> Aprovar Saída
                           </button>
                           <button 
                             disabled={actionLoading}
                             onClick={() => updateStatus(s.id, 'rejeitada')}
-                            className="bg-white border-2 border-red-500 text-red-500 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-red-50 transition disabled:opacity-50"
+                            className="bg-white border text-red-600 border-red-200 hover:border-red-300 font-bold py-3 sm:py-4 rounded-xl flex items-center justify-center hover:bg-red-50 transition shadow-sm disabled:opacity-50"
                           >
                             <XCircle size={20} className="mr-2" /> Rejeitar
                           </button>
                         </div>
-                        <p className="text-center text-[10px] text-gray-400 mt-4 uppercase font-bold tracking-widest">Ao aprovar, o sistema baixará automaticamente o estoque dos itens listados.</p>
+                        <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-5 uppercase font-bold tracking-widest">Ao aprovar, o sistema baixará automaticamente o estoque.</p>
                       </div>
                     )}
 

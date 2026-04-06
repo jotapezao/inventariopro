@@ -114,22 +114,25 @@ export default function Dashboard() {
     <div>
       {/* Cabeçalho com botões públicos para não logados */}
       {!signed && (
-        <div className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-5 shadow-lg flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div className="text-white">
-            <h2 className="text-xl font-bold">Almoxarifado — Acesso Público</h2>
-            <p className="text-blue-100 text-sm mt-1">Faça uma solicitação sem precisar de login. O Admin aprovará seu pedido.</p>
+        <div className="mb-6 bg-gradient-to-br from-slate-800 to-indigo-900 rounded-2xl p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row gap-6 items-center justify-between relative overflow-hidden">
+          {/* Light flare effect */}
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-indigo-500 blur-[80px] opacity-20 pointer-events-none"></div>
+
+          <div className="text-white z-10 w-full text-center sm:text-left">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Almoxarifado Aberto</h2>
+            <p className="text-indigo-200 text-sm mt-1 sm:mt-2">Faça sua solicitação rapidamente sem uso de senha.</p>
           </div>
-          <div className="flex gap-3 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0 w-full sm:w-auto z-10">
             <button
               onClick={() => navigate('/solicitar?tipo=saida')}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 border border-white/40 text-white font-bold px-5 py-2.5 rounded-lg transition"
+              className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-6 py-3 rounded-xl transition backdrop-blur-sm w-full sm:w-auto hover:shadow-lg"
             >
               <PackageMinus size={20} />
-              Solicitar Saída
+              Solicitar Material
             </button>
             <button
               onClick={() => navigate('/solicitar?tipo=entrada')}
-              className="flex items-center gap-2 bg-white font-bold px-5 py-2.5 rounded-lg text-blue-700 hover:bg-blue-50 transition shadow"
+              className="flex items-center justify-center gap-2 bg-white font-bold px-6 py-3 rounded-xl text-indigo-900 hover:bg-indigo-50 hover:shadow-lg transition shadow-md w-full sm:w-auto hover:-translate-y-0.5"
             >
               <PackagePlus size={20} />
               Registrar Entrada
@@ -145,7 +148,7 @@ export default function Dashboard() {
         </h1>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <div className="flex bg-white items-center border border-gray-300 rounded-md px-3 py-2 w-full sm:w-auto shadow-sm">
+          <div className="flex bg-white items-center border border-gray-200 hover:border-gray-300 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 rounded-xl px-4 py-2.5 w-full sm:w-auto shadow-sm transition-all duration-200">
             <Search className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
             <input
               type="text"
@@ -158,7 +161,7 @@ export default function Dashboard() {
           {signed && (
             <button 
               onClick={exportToCSV}
-              className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-medium transition shadow-sm"
+              className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 hover:-translate-y-0.5 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
               title="Exportar Estoque"
             >
               <Download size={18} />
@@ -169,7 +172,7 @@ export default function Dashboard() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap gap-3 mb-5 items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+      <div className="flex flex-wrap gap-3 mb-6 items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
         <Filter size={16} className="text-gray-500 flex-shrink-0" />
         <span className="text-sm font-medium text-gray-600">Filtrar:</span>
 
@@ -206,7 +209,7 @@ export default function Dashboard() {
           <RefreshCcw className="animate-spin text-blue-600 h-8 w-8" />
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {(!products || products.length === 0) ? (
             <div className="p-8 text-center text-gray-500">
               Nenhum produto encontrado.
@@ -223,9 +226,9 @@ export default function Dashboard() {
                     {signed && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
+                    <tr key={product.id} className="hover:bg-slate-50 transition-colors duration-150">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
@@ -258,11 +261,11 @@ export default function Dashboard() {
                       {signed && (
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-2">
-                            <button onClick={() => openModal(product, 'entrada')} className="bg-green-100 text-green-700 hover:bg-green-200 p-2 rounded transition-colors" title="Registrar Entrada">
-                              <Plus size={16} />
+                            <button onClick={() => openModal(product, 'entrada')} className="bg-green-50 text-green-600 hover:bg-green-600 hover:text-white p-2.5 rounded-lg transition-all" title="Registrar Entrada">
+                              <Plus size={18} />
                             </button>
-                            <button onClick={() => openModal(product, 'saida')} className="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded transition-colors" title="Registrar Saída">
-                              <Minus size={16} />
+                            <button onClick={() => openModal(product, 'saida')} className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all" title="Registrar Saída">
+                              <Minus size={18} />
                             </button>
                           </div>
                         </td>

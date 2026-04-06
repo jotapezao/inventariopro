@@ -1,32 +1,34 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* ─── Custom dark-mode variant (Tailwind v4) ─── */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ─── CSS Variables — Light mode ─── */
 :root {
-  --bg-base:    #f3f4f6;
+  --bg-base:    #f8fafc; /* Slate 50 */
   --bg-card:    #ffffff;
-  --bg-nav:     #2563eb;
-  --text-main:  #111827;
-  --text-sub:   #6b7280;
-  --border:     #e5e7eb;
-  --input-bg:   #f9fafb;
+  --bg-nav:     rgba(15, 23, 42, 0.85); /* Slate 900 with alpha */
+  --text-main:  #0f172a;
+  --text-sub:   #64748b;
+  --border:     #e2e8f0;
+  --input-bg:   #f8fafc;
 }
 
 /* ─── CSS Variables — Dark mode ─── */
 .dark {
-  --bg-base:    #0f172a;
-  --bg-card:    #1e293b;
-  --bg-nav:     #1e3a8a;
-  --text-main:  #f1f5f9;
+  --bg-base:    #020617; /* Slate 950 */
+  --bg-card:    #0f172a; /* Slate 900 */
+  --bg-nav:     rgba(2, 6, 23, 0.85); /* Slate 950 with alpha */
+  --text-main:  #f8fafc;
   --text-sub:   #94a3b8;
-  --border:     #334155;
-  --input-bg:   #0f172a;
+  --border:     #1e293b;
+  --input-bg:   #020617;
 }
 
 /* ─── Apply global colors ─── */
 body {
+  font-family: 'Inter', sans-serif;
   background-color: var(--bg-base);
   color: var(--text-main);
   transition: background-color 0.2s, color 0.2s;

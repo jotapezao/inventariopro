@@ -196,12 +196,12 @@ export default function CadastroProduto() {
     }
   };
 
-  const inputCls = "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm";
-  const labelCls = "block text-sm font-medium text-gray-700 mb-1";
+  const inputCls = "mt-1 block w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm shadow-sm duration-200";
+  const labelCls = "block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1";
 
   return (
-    <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Cadastrar Novo Produto</h2>
+    <div className="max-w-4xl mx-auto bg-white p-8 sm:p-10 rounded-3xl shadow-xl border border-gray-100">
+      <h2 className="text-3xl font-extrabold text-gray-800 mb-8 tracking-tight">Novo Produto</h2>
 
       {success && <div className="mb-4 bg-green-100 p-3 rounded text-green-700 flex items-center"><CheckCircle className="mr-2" />{success}</div>}
       {error && <div className="mb-4 bg-red-100 p-3 rounded text-red-700 flex items-center"><XCircle className="mr-2" />{error}</div>}
@@ -300,9 +300,9 @@ export default function CadastroProduto() {
         </div>
 
         {/* Foto */}
-        <div className="border-t border-gray-200 pt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Foto do Produto <span className="text-gray-400 font-normal text-xs">(Comprimida automaticamente para economizar espaço)</span>
+        <div className="border-t border-gray-100 pt-8 mt-4">
+          <label className="block text-sm font-bold text-gray-700 mb-3">
+            Foto do Produto <span className="text-gray-400 font-normal text-xs ml-1">(Será otimizada automaticamente)</span>
           </label>
 
           <div className="flex flex-col md:flex-row gap-4 items-start">
@@ -339,14 +339,14 @@ export default function CadastroProduto() {
         </div>
 
         {/* Botões */}
-        <div className="flex flex-col sm:flex-row justify-end pt-5 gap-3 border-t border-gray-100">
-          <button type="button" onClick={() => navigate('/')} className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <div className="flex flex-col sm:flex-row justify-end pt-8 gap-3 border-t border-gray-100 mt-6">
+          <button type="button" onClick={() => navigate('/')} className="bg-white py-3 px-6 border border-gray-300 rounded-xl shadow-sm text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all">
             Voltar
           </button>
-          <button type="button" onClick={(e) => handleSubmit(e, 'continue')} disabled={loading} className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 disabled:opacity-50">
+          <button type="button" onClick={(e) => handleSubmit(e, 'continue')} disabled={loading} className="inline-flex justify-center items-center py-3 px-6 border border-transparent shadow-sm text-sm font-bold rounded-xl text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-all disabled:opacity-50">
             {loading ? 'Salvando...' : 'Salvar e Continuar'}
           </button>
-          <button type="button" onClick={(e) => handleSubmit(e, 'back')} disabled={loading} className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+          <button type="button" onClick={(e) => handleSubmit(e, 'back')} disabled={loading} className="inline-flex justify-center items-center py-3 px-8 border border-transparent shadow-md text-sm font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-all disabled:opacity-50 hover:-translate-y-0.5">
             {loading ? 'Salvando...' : 'Salvar Produto'}
           </button>
         </div>

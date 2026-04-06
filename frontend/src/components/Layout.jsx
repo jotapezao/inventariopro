@@ -11,7 +11,7 @@ export const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col" style={{ backgroundColor: 'var(--bg-base)' }}>
     {/* Navbar */}
-      <header style={{ backgroundColor: 'var(--bg-nav)' }} className="shadow-md">
+      <header style={{ backgroundColor: 'var(--bg-nav)' }} className="shadow-md sticky top-0 z-50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap justify-between py-3 items-center gap-4">
 
