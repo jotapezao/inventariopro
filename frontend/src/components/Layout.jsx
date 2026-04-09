@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppConfig } from '../contexts/AppConfigContext';
-import { LogOut, PlusSquare, Settings, HelpCircle, LogIn, Sun, Moon, History, FileBox, User } from 'lucide-react';
+import { LogOut, PlusSquare, Settings, HelpCircle, LogIn, Sun, Moon, History, FileBox, User, CheckCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 export const Layout = ({ children }) => {
