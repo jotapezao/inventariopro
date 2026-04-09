@@ -110,24 +110,24 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
                       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
                       <div className="mt-5">
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">Quantidade</label>
-                        <div className="mt-1 flex rounded-xl shadow-sm overflow-hidden border border-gray-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+                        <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-tight">Quantidade para {isEntrada ? 'Entrar' : 'Sair'}</label>
+                        <div className="mt-1 flex rounded-xl shadow-md overflow-hidden border-2 border-indigo-100 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-50 transition-all bg-white">
                           <input
                             type="number"
                             min="1"
                             autoFocus
                             onFocus={(e) => e.target.select()}
-                            className="flex-1 block w-full py-2.5 px-4 outline-none sm:text-sm bg-gray-50 focus:bg-white transition-colors text-lg font-bold"
+                            className="flex-1 block w-full py-4 px-5 outline-none text-xl font-black text-indigo-900 bg-white placeholder-gray-300"
                             value={quantidade}
                             onChange={e => setQuantidade(e.target.value)}
                             placeholder="0"
                             required
                           />
-                          <div className="flex border-l border-gray-200">
+                          <div className="flex bg-gray-50 border-l-2 border-indigo-100">
                             <button
                               type="button"
                               onClick={() => setQuantidade((prev) => (parseInt(prev || 0) + 1).toString())}
-                              className="px-3 bg-gray-100 text-indigo-600 font-bold hover:bg-indigo-50 border-r border-gray-200"
+                              className="px-4 hover:bg-indigo-600 hover:text-white text-indigo-700 font-black transition-colors border-r border-indigo-100"
                               title="+1"
                             >
                               +1
@@ -135,7 +135,7 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
                             <button
                               type="button"
                               onClick={() => setQuantidade((prev) => (parseInt(prev || 0) + 10).toString())}
-                              className="px-3 bg-gray-100 text-indigo-600 font-bold hover:bg-indigo-50"
+                              className="px-4 hover:bg-indigo-600 hover:text-white text-indigo-700 font-black transition-colors"
                               title="+10"
                             >
                               +10
@@ -145,7 +145,7 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
                             <button
                               type="button"
                               onClick={() => setQuantidade(product.quantidade.toString())}
-                              className="inline-flex items-center px-4 bg-gray-100 text-gray-600 font-medium text-sm hover:bg-gray-200 hover:text-gray-900 transition-colors border-l border-gray-200"
+                              className="inline-flex items-center px-4 bg-red-50 text-red-600 font-bold text-xs uppercase hover:bg-red-600 hover:text-white transition-colors border-l-2 border-indigo-100"
                             >
                               Tudo
                             </button>
