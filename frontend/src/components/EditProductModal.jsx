@@ -7,8 +7,9 @@ export function EditProductModal({ product, onClose, onSuccess }) {
   const [categoriaId, setCategoriaId] = useState(product?.categoria_id || '');
   const [tipoId, setTipoId] = useState(product?.tipo_id || '');
   const [codigo, setCodigo] = useState(product?.codigo || '');
-  const [unidade, setUnidade] = useState(product?.unidade || '');
+   const [unidade, setUnidade] = useState(product?.unidade || '');
   const [localizacao, setLocalizacao] = useState(product?.localizacao || '');
+  const [quantidade, setQuantidade] = useState(product?.quantidade || 0);
   const [foto, setFoto] = useState(null);
   const getInitialPreview = (path) => {
     if (!path) return null;
@@ -64,6 +65,7 @@ export function EditProductModal({ product, onClose, onSuccess }) {
     formData.append('codigo', codigo);
     formData.append('unidade', unidade);
     formData.append('localizacao', localizacao);
+    formData.append('quantidade', quantidade);
     if (foto) {
       formData.append('foto', foto);
     }
@@ -139,6 +141,16 @@ export function EditProductModal({ product, onClose, onSuccess }) {
                   value={codigo}
                   onChange={(e) => setCodigo(e.target.value)}
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 text-indigo-600">Quantidade em Estoque</label>
+                <input
+                  type="number"
+                  value={quantidade}
+                  onChange={(e) => setQuantidade(e.target.value)}
+                  className="w-full bg-white border-2 border-indigo-100 rounded-xl px-4 py-3 text-lg font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
                 />
               </div>
             </div>

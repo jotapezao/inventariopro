@@ -113,10 +113,10 @@ exports.updateProduct = async (req, res) => {
 
     const query = `
       UPDATE Produtos 
-      SET nome = $1, categoria_id = $2, tipo_id = $3, codigo = $4, unidade = $5, localizacao = $6, foto = $7
-      WHERE id = $8
+      SET nome = $1, categoria_id = $2, tipo_id = $3, codigo = $4, unidade = $5, localizacao = $6, foto = $7, quantidade = $8
+      WHERE id = $9
     `;
-    await db.query(query, [nome, categoria_id, tipo_id || null, codigo, unidade, localizacao, finalFoto, id]);
+    await db.query(query, [nome, categoria_id, tipo_id || null, codigo, unidade, localizacao, finalFoto, parseInt(req.body.quantidade || 0), id]);
     res.json({ message: 'Produto atualizado com sucesso.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
