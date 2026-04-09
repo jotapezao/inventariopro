@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalType, setModalType] = useState('entrada');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   const loadCategories = async () => {
     try {
@@ -117,6 +118,65 @@ export default function Dashboard() {
     document.body.removeChild(link);
   };
 
+  const handleImportCSV = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImporting(true);
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        const rows = text.split('\n').map(row => row.split(';'));
+        
+        if (rows.length < 2) {
+          alert('Planilha vazia ou com formato incorreto.');
+          return;
+        }
+
+        const headers = rows[0].map(h => h.trim().toLowerCase());
+        const dataRows = rows.slice(1);
+
+        const productsToImport = dataRows.map(row => {
+          if (row.length < 2) return null;
+          
+          const getVal = (search) => {
+            const idx = headers.findIndex(h => h.includes(search));
+            return idx !== -1 ? row[idx]?.trim() : '';
+          };
+
+          return {
+            nome: getVal('nome'),
+            codigo: getVal('código'),
+            categoria_nome: getVal('categoria'),
+            tipo_nome: getVal('tipo'),
+            localizacao: getVal('localização'),
+            quantidade: getVal('quantidade') || 0,
+            unidade: getVal('unidade')
+          };
+        }).filter(p => p && p.nome && p.categoria_nome);
+
+        if (productsToImport.length === 0) {
+          alert('Nenhum produto válido encontrado. Verifique as colunas (Nome, Categoria, Unidade).');
+          return;
+        }
+
+        const response = await api.post('/produtos/importar', { products: productsToImport });
+        alert(`Importação concluída!\nSucessos: ${response.data.successCount}\nErros: ${response.data.errors.length}`);
+        loadProducts();
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao processar planilha: ' + (err.response?.data?.message || err.message));
+      } finally {
+        setImporting(false);
+        e.target.value = ''; // Reset input
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
   const selectCls = "bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none pr-7";
 
   const getImageUrl = (path) => {
@@ -176,14 +236,35 @@ export default function Dashboard() {
             />
           </div>
           {signed && (
-            <button 
-              onClick={exportToCSV}
-              className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 hover:-translate-y-0.5 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
-              title="Exportar Estoque"
-            >
-              <Download size={18} />
-              <span className="hidden sm:inline">Exportar Excel</span>
-            </button>
+            <div className="flex gap-2">
+              {/* Importador Escondido */}
+              <input 
+                type="file" 
+                id="csvImport" 
+                accept=".csv" 
+                className="hidden" 
+                onChange={handleImportCSV}
+                disabled={importing}
+              />
+              <button 
+                onClick={() => document.getElementById('csvImport').click()}
+                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-0.5 text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50"
+                title="Importar Planilha"
+                disabled={importing}
+              >
+                {importing ? <RefreshCcw size={18} className="animate-spin" /> : <Plus size={18} />}
+                <span className="hidden sm:inline">Importar CSV</span>
+              </button>
+
+              <button 
+                onClick={exportToCSV}
+                className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 hover:-translate-y-0.5 text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
+                title="Exportar Estoque"
+              >
+                <Download size={18} />
+                <span className="hidden sm:inline">Exportar Excel</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
