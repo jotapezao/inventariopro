@@ -93,6 +93,32 @@ export default function Dashboard() {
     loadProducts();
   };
 
+  const handleQuickAdjustment = async (product, delta) => {
+    // Não permite saída maior que o estoque
+    if (delta < 0 && product.quantidade + delta < 0) {
+      alert(`Estoque insuficiente para reduzir. Disponível: ${product.quantidade}`);
+      return;
+    }
+
+    try {
+      // Atualização otimista na UI
+      setProducts(prev => prev.map(p => 
+        p.id === product.id ? { ...p, quantidade: Math.max(0, p.quantidade + delta) } : p
+      ));
+
+      await api.post('/movimentacoes', {
+        produto_id: product.id,
+        tipo: delta > 0 ? 'entrada' : 'saida',
+        quantidade: Math.abs(delta)
+      });
+      // Recarrega para garantir sincronia com BD
+      loadProducts();
+    } catch (err) {
+      alert('Erro no ajuste rápido: ' + (err.response?.data?.message || err.message));
+      loadProducts(); // Reverte em caso de erro
+    }
+  };
+
   const handleSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -423,16 +449,35 @@ export default function Dashboard() {
                       {signed && (
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-2">
-                            <button onClick={() => openModal(product, 'entrada')} className="bg-green-50 text-green-600 hover:bg-green-600 hover:text-white p-2.5 rounded-lg transition-all" title="Registrar Entrada">
+                            <button 
+                              onClick={() => handleQuickAdjustment(product, 1)} 
+                              className="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm active:scale-95" 
+                              title="Aumentar +1 (Rápido)"
+                            >
                               <Plus size={18} />
                             </button>
-                            <button onClick={() => openModal(product, 'saida')} className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all" title="Registrar Saída">
+                            <button 
+                              onClick={() => handleQuickAdjustment(product, -1)} 
+                              className="bg-red-100 text-red-700 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm active:scale-95" 
+                              title="Diminuir -1 (Rápido)"
+                            >
                               <Minus size={18} />
                             </button>
-                            <button onClick={() => openEditModal(product)} className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all" title="Editar Produto">
+                            <button 
+                              onClick={() => openModal(product, 'entrada')} 
+                              className="bg-gray-100 text-gray-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm" 
+                              title="Entrada Detalhada"
+                            >
+                              <PackagePlus size={18} />
+                            </button>
+                            <button 
+                              onClick={() => openEditModal(product)} 
+                              className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm" 
+                              title="Editar Detalhes"
+                            >
                               <Pencil size={18} />
                             </button>
-                            <button onClick={() => handleDeleteProduct(product.id, product.nome)} className="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all" title="Excluir Produto">
+                            <button onClick={() => handleDeleteProduct(product.id, product.nome)} className="bg-red-50 text-red-400 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm" title="Excluir Produto">
                               <Trash2 size={18} />
                             </button>
                           </div>

@@ -110,46 +110,37 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
                       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
                       <div className="mt-5">
-                        <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-tight">Quantidade para {isEntrada ? 'Entrar' : 'Sair'}</label>
-                        <div className="mt-1 flex rounded-xl shadow-md overflow-hidden border-2 border-indigo-100 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-50 transition-all bg-white">
+                        <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Quantidade</label>
+                        <div className="mt-1 flex rounded-lg shadow-sm overflow-hidden border-2 border-gray-400 focus-within:border-blue-600 transition-all bg-white">
                           <input
                             type="number"
                             min="1"
                             autoFocus
                             onFocus={(e) => e.target.select()}
-                            className="flex-1 block w-full py-4 px-5 outline-none text-xl font-black text-indigo-900 bg-white placeholder-gray-300"
+                            className="flex-1 block w-full py-3 px-4 outline-none text-xl font-bold text-gray-900 bg-white"
                             value={quantidade}
                             onChange={e => setQuantidade(e.target.value)}
                             placeholder="0"
                             required
                           />
-                          <div className="flex bg-gray-50 border-l-2 border-indigo-100">
+                          <div className="flex bg-gray-100 border-l-2 border-gray-400">
                             <button
                               type="button"
                               onClick={() => setQuantidade((prev) => (parseInt(prev || 0) + 1).toString())}
-                              className="px-4 hover:bg-indigo-600 hover:text-white text-indigo-700 font-black transition-colors border-r border-indigo-100"
+                              className="px-4 hover:bg-gray-200 text-gray-700 font-bold transition-colors border-r border-gray-400"
                               title="+1"
                             >
-                              +1
+                              +
                             </button>
                             <button
                               type="button"
                               onClick={() => setQuantidade((prev) => (parseInt(prev || 0) + 10).toString())}
-                              className="px-4 hover:bg-indigo-600 hover:text-white text-indigo-700 font-black transition-colors"
+                              className="px-4 hover:bg-gray-200 text-gray-700 font-bold transition-colors"
                               title="+10"
                             >
                               +10
                             </button>
                           </div>
-                          {!isEntrada && (
-                            <button
-                              type="button"
-                              onClick={() => setQuantidade(product.quantidade.toString())}
-                              className="inline-flex items-center px-4 bg-red-50 text-red-600 font-bold text-xs uppercase hover:bg-red-600 hover:text-white transition-colors border-l-2 border-indigo-100"
-                            >
-                              Tudo
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
