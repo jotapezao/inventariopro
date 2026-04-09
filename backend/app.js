@@ -42,7 +42,7 @@ app.use('/api/movimentacoes', movementRoutes);
 app.use('/api/categorias', categoryRoutes);
 app.use('/api/solicitacoes', solicitationRoutes);
 app.use('/api/tipos', typeRoutes);
-app.use('/api/config', configRoutes);
+app.use('/api/configuracoes', configRoutes);
 
 // SERVIR FRONTEND
 app.use(express.static(path.join(__dirname, '../frontend/dist')));

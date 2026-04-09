@@ -31,12 +31,13 @@ if (useCloudinary) {
     }
   });
 } else {
-  console.log('--- Usando Disco Local para Armazenamento (Imagens sumirão no deploy do Railway) ---');
+  console.log('--- Usando Volume Persistente para Armazenamento (Imagens SEGURAS no deploy) ---');
   storage = multer.diskStorage({
     destination: function (req, file, cb) {
       const isSolicitation = req.originalUrl.includes('solicitacoes');
-      const folder = isSolicitation ? 'uploads/solicitacoes/' : 'uploads/produtos/';
-      cb(null, folder);
+      // Usar path.resolve para garantir que o caminho seja absoluto e aponte para o volume montado
+      const absolutePath = path.resolve(__dirname, '../../uploads', isSolicitation ? 'solicitacoes' : 'produtos');
+      cb(null, absolutePath);
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
