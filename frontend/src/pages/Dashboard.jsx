@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
-import { Search, Plus, Minus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus, ChevronDown, Filter, Download, Trash2 } from 'lucide-react';
+import { Search, Plus, Minus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus, ChevronDown, Filter, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { MovementsModal } from '../components/MovementsModal';
 import { EditProductModal } from '../components/EditProductModal';
 import { useNavigate } from 'react-router-dom';
@@ -28,6 +28,9 @@ export default function Dashboard() {
   const [modalType, setModalType] = useState('entrada');
   const [selectedImage, setSelectedImage] = useState(null);
   const [importing, setImporting] = useState(false);
+
+  // Ordenação
+  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' });
 
   const loadCategories = async () => {
     try {
@@ -88,6 +91,36 @@ export default function Dashboard() {
   const handleMovementSuccess = () => {
     setIsModalOpen(false);
     loadProducts();
+  };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedProducts = [...products].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    let aVal = a[sortConfig.key];
+    let bVal = b[sortConfig.key];
+
+    // Tratamento especial para nomes de categorias/tipos que vêm de joins
+    if (sortConfig.key === 'categoria') aVal = a.categoria_nome;
+    if (sortConfig.key === 'categoria') bVal = b.categoria_nome;
+    
+    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return <ArrowUpDown size={14} className="ml-1 opacity-30" />;
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp size={14} className="ml-1 text-indigo-500" /> 
+      : <ArrowDown size={14} className="ml-1 text-indigo-500" />;
   };
 
   const handleDeleteProduct = async (id, nome) => {
@@ -328,15 +361,30 @@ export default function Dashboard() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produto</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria / Tipo</th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('nome')}
+                    >
+                      <div className="flex items-center">Produto {getSortIcon('nome')}</div>
+                    </th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('categoria')}
+                    >
+                      <div className="flex items-center">Categoria / Tipo {getSortIcon('categoria')}</div>
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Localização</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estoque</th>
+                    <th 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('quantidade')}
+                    >
+                      <div className="flex items-center">Estoque {getSortIcon('quantidade')}</div>
+                    </th>
                     {signed && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {products.map((product) => (
+                  {sortedProducts.map((product) => (
                     <tr key={product.id} className="hover:bg-slate-50 transition-colors duration-150">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">

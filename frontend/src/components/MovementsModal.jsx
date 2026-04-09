@@ -115,12 +115,32 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
                           <input
                             type="number"
                             min="1"
-                            className="flex-1 block w-full py-2.5 px-4 outline-none sm:text-sm bg-gray-50 focus:bg-white transition-colors"
+                            autoFocus
+                            onFocus={(e) => e.target.select()}
+                            className="flex-1 block w-full py-2.5 px-4 outline-none sm:text-sm bg-gray-50 focus:bg-white transition-colors text-lg font-bold"
                             value={quantidade}
                             onChange={e => setQuantidade(e.target.value)}
-                            placeholder="Digite a quantidade"
+                            placeholder="0"
                             required
                           />
+                          <div className="flex border-l border-gray-200">
+                            <button
+                              type="button"
+                              onClick={() => setQuantidade((prev) => (parseInt(prev || 0) + 1).toString())}
+                              className="px-3 bg-gray-100 text-indigo-600 font-bold hover:bg-indigo-50 border-r border-gray-200"
+                              title="+1"
+                            >
+                              +1
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setQuantidade((prev) => (parseInt(prev || 0) + 10).toString())}
+                              className="px-3 bg-gray-100 text-indigo-600 font-bold hover:bg-indigo-50"
+                              title="+10"
+                            >
+                              +10
+                            </button>
+                          </div>
                           {!isEntrada && (
                             <button
                               type="button"
@@ -130,7 +150,6 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
                               Tudo
                             </button>
                           )}
-                          {isEntrada && <span className="inline-flex items-center px-4 bg-gray-100 text-gray-500 text-sm border-l border-gray-200">{product.unidade}</span>}
                         </div>
                       </div>
                     </div>
