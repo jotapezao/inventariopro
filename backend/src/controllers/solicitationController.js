@@ -2,8 +2,18 @@ const db = require('../database/db');
 
 // Criar nova solicitação (pública — funciona com ou sem login)
 exports.createSolicitation = async (req, res) => {
-  const { observacao, itens, nome_solicitante, tipo_solicitacao } = req.body;
-  // usuario_id pode vir do token (se logado) ou ser null (anônimo)
+  // Quando usamos FormData para enviar arquivos, os outros campos vêm em req.body
+  // Os itens geralmente vêm como uma string JSON que precisa ser parseada
+  let { observacao, itens, nome_solicitante, tipo_solicitacao } = req.body;
+  
+  if (typeof itens === 'string') {
+    try {
+      itens = JSON.parse(itens);
+    } catch (e) {
+      return res.status(400).json({ message: 'Formato de itens inválido.' });
+    }
+  }
+
   const usuario_id = req.user ? req.user.id : null;
 
   if (!itens || !Array.isArray(itens) || itens.length === 0) {
@@ -26,18 +36,31 @@ exports.createSolicitation = async (req, res) => {
 
     const solicitacao_id = solicitationResult.rows[0].id;
 
+    // Processar fotos (se houver)
+    // Se enviarmos fotos no FormData, elas estarão em req.files
+    const files = req.files || [];
+    let fileIdx = 0;
+
     for (const item of itens) {
+      // Se o item indicar que possui foto, pegamos o próximo arquivo do array
+      let fotoPath = null;
+      if (item.hasPhoto && files[fileIdx]) {
+        fotoPath = files[fileIdx].path.replace(/\\/g, '/');
+        fileIdx++;
+      }
+
       await client.query(
         `INSERT INTO ItensSolicitacao 
-         (solicitacao_id, produto_id, nome_produto_livre, categoria_livre, tipo_livre, quantidade) 
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+         (solicitacao_id, produto_id, nome_produto_livre, categoria_livre, tipo_livre, quantidade, foto) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
         [
           solicitacao_id,
           item.produto_id || null,
           item.nome_produto_livre || null,
           item.categoria_livre || null,
           item.tipo_livre || null,
-          item.quantidade
+          item.quantidade,
+          fotoPath
         ]
       );
     }

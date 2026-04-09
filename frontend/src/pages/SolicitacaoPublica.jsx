@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   Search, Trash2, CheckCircle, AlertTriangle,
-  PackageMinus, PackagePlus, ChevronDown, User, ArrowLeft
+  PackageMinus, PackagePlus, ChevronDown, User, ArrowLeft, Camera, Image as ImageIcon
 } from 'lucide-react';
 
 export default function SolicitacaoPublica() {
@@ -30,7 +30,7 @@ export default function SolicitacaoPublica() {
 
   // Para ENTRADA: produto novo (com selects de categoria e tipo)
   const [entradaItens, setEntradaItens] = useState([
-    { nome_produto_livre: '', categoria_id: '', categoria_livre: '', tipo_id: '', tipo_livre: '', quantidade: 1 }
+    { nome_produto_livre: '', categoria_id: '', categoria_livre: '', tipo_id: '', tipo_livre: '', quantidade: 1, foto: null, preview: null }
   ]);
   const [tiposPorItem, setTiposPorItem] = useState([[]]); // array de arrays por item
 
@@ -101,7 +101,7 @@ export default function SolicitacaoPublica() {
 
   // Entrada: itens
   const addEntradaItem = () => {
-    setEntradaItens([...entradaItens, { nome_produto_livre: '', categoria_id: '', categoria_livre: '', tipo_id: '', tipo_livre: '', quantidade: 1 }]);
+    setEntradaItens([...entradaItens, { nome_produto_livre: '', categoria_id: '', categoria_livre: '', tipo_id: '', tipo_livre: '', quantidade: 1, foto: null, preview: null }]);
     setTiposPorItem([...tiposPorItem, []]);
   };
   const removeEntradaItem = (idx) => {
@@ -133,6 +133,17 @@ export default function SolicitacaoPublica() {
     ));
   };
 
+  const handleFileChange = (idx, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEntradaItens(entradaItens.map((item, i) =>
+        i === idx ? { ...item, foto: file, preview: reader.result } : item
+      ));
+    };
+    reader.readAsDataURL(file);
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -154,11 +165,27 @@ export default function SolicitacaoPublica() {
     setError('');
 
     try {
-      await api.post('/solicitacoes', {
-        nome_solicitante: nomeSolicitante,
-        tipo_solicitacao: tipo,
-        observacao,
-        itens
+      const formData = new FormData();
+      formData.append('nome_solicitante', nomeSolicitante);
+      formData.append('tipo_solicitacao', tipo);
+      formData.append('observacao', observacao);
+      
+      const itensComHasPhoto = itens.map((it, idx) => ({
+        ...it,
+        hasPhoto: !!(isSaida ? null : entradaItens[idx].foto)
+      }));
+      formData.append('itens', JSON.stringify(itensComHasPhoto));
+
+      if (!isSaida) {
+        entradaItens.forEach(item => {
+          if (item.foto) {
+            formData.append('fotos', item.foto);
+          }
+        });
+      }
+
+      await api.post('/solicitacoes', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       setSuccess(true);
     } catch (err) {
@@ -447,9 +474,9 @@ export default function SolicitacaoPublica() {
                     </div>
 
                     {/* Quantidade + Remover */}
-                    <div className="flex items-end gap-3">
-                      <div className="w-40">
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Quantidade *</label>
+                    <div className="flex items-end justify-between gap-3 pt-4">
+                      <div className="w-32 sm:w-40">
+                        <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Qtd *</label>
                         <input
                           type="number"
                           min="1"
@@ -458,11 +485,58 @@ export default function SolicitacaoPublica() {
                           className={inputCls}
                         />
                       </div>
+                      
                       {entradaItens.length > 1 && (
-                        <button type="button" onClick={() => removeEntradaItem(idx)} className="text-red-400 hover:text-red-700 pb-2">
-                          <Trash2 size={18} />
+                        <button 
+                          type="button" 
+                          onClick={() => removeEntradaItem(idx)} 
+                          className="flex items-center gap-1.5 px-3 py-2 text-red-500 hover:text-white hover:bg-red-500 rounded-lg transition-all text-xs font-bold border border-red-200"
+                        >
+                          <Trash2 size={14} /> Remover
                         </button>
                       )}
+                    </div>
+
+                    {/* Foto Material / Câmera */}
+                    <div className="pt-2 border-t border-gray-100">
+                      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Foto do Material / Comprovante</label>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <label className="relative flex items-center gap-2 bg-white border-2 border-dashed border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/30 px-4 py-3 rounded-xl cursor-pointer transition-all group">
+                          <Camera size={20} className="text-gray-400 group-hover:text-indigo-500" />
+                          <span className="text-sm font-medium text-gray-600 group-hover:text-indigo-700">Tirar Foto</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            capture="environment" 
+                            className="hidden" 
+                            onChange={e => handleFileChange(idx, e.target.files[0])}
+                          />
+                        </label>
+                        
+                        <label className="relative flex items-center gap-2 bg-white border-2 border-dashed border-gray-200 hover:border-emerald-400 hover:bg-emerald-50/30 px-4 py-3 rounded-xl cursor-pointer transition-all group">
+                          <ImageIcon size={20} className="text-gray-400 group-hover:text-emerald-500" />
+                          <span className="text-sm font-medium text-gray-600 group-hover:text-emerald-700">Anexar Galeria</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={e => handleFileChange(idx, e.target.files[0])}
+                          />
+                        </label>
+
+                        {item.preview && (
+                          <div className="relative h-14 w-14 rounded-lg overflow-hidden border-2 border-indigo-500 group">
+                            <img src={item.preview} alt="Preview" className="h-full w-full object-cover" />
+                            <button 
+                              type="button"
+                              onClick={() => updateEntradaItem(idx, 'foto', null) || updateEntradaItem(idx, 'preview', null)}
+                              className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Trash2 size={14} className="text-white" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

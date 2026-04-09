@@ -182,6 +182,9 @@ const createTables = async () => {
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS categoria_livre TEXT`);
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS tipo_livre TEXT`);
     await client.query(`ALTER TABLE ItensSolicitacao ADD COLUMN IF NOT EXISTS foto TEXT`);
+
+    // Correção: remover restrição NOT NULL de produto_id para permitir entrada livre
+    await client.query(`ALTER TABLE ItensSolicitacao ALTER COLUMN produto_id DROP NOT NULL`).catch(e => console.log('Aviso (ItensSolicitacao):', e.message));
     // Tabela Configuracoes
     await client.query(`
       CREATE TABLE IF NOT EXISTS Configuracoes (
