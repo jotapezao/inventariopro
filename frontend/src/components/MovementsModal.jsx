@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useAppConfig } from '../contexts/AppConfigContext';
 
 export function MovementsModal({ product, type, onClose, onSuccess }) {
+  const { config } = useAppConfig();
   const [quantidade, setQuantidade] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [globalWhatsapp, setGlobalWhatsapp] = useState('');
   const [successWhatsappUrl, setSuccessWhatsappUrl] = useState('');
-
-  useEffect(() => {
-    api.get('/config/whatsapp_notificacao')
-      .then(res => setGlobalWhatsapp(res.data?.valor || ''))
-      .catch(() => { });
-  }, []);
 
   const isEntrada = type === 'entrada';
 
@@ -34,8 +29,9 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
         quantidade: parseInt(quantidade)
       });
 
-      if (globalWhatsapp) {
-        const numToUse = globalWhatsapp.replace(/\D/g, '');
+      const whatsappNumber = config.whatsapp_notificacao || config.whatsapp_admin;
+      if (whatsappNumber) {
+        const numToUse = whatsappNumber.replace(/\D/g, '');
         if (numToUse) {
           const msg = `📦 *Nova Movimentação de Estoque*\n\n*Tipo:* ${isEntrada ? 'Entrada' : 'Saída'}\n*Produto:* ${product.nome}\n*Quantidade:* ${quantidade} ${product.unidade}\n\n_Registrado via API_`;
           const url = `https://wa.me/${numToUse}?text=${encodeURIComponent(msg)}`;

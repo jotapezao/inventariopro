@@ -265,15 +265,15 @@ export default function Configuracoes() {
             />
           </div>
 
-          {/* WhatsApp Admin */}
+          {/* WhatsApp Admin / Notificações */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-sub)' }}>
               <span className="inline-flex items-center gap-1"><Phone size={12} /> WhatsApp do Admin (Notificações)</span>
             </label>
             <input
               type="text"
-              value={localConfig.whatsapp_admin}
-              onChange={e => setLocalConfig(p => ({ ...p, whatsapp_admin: e.target.value }))}
+              value={localConfig.whatsapp_notificacao || localConfig.whatsapp_admin}
+              onChange={e => setLocalConfig(p => ({ ...p, whatsapp_admin: e.target.value, whatsapp_notificacao: e.target.value }))}
               placeholder="Ex: 5565999999999"
               className="input-base"
             />

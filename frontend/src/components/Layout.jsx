@@ -131,9 +131,9 @@ export const Layout = ({ children }) => {
       </footer>
 
       {/* Botão de Suporte Flutuante */}
-      {config.whatsapp_notificacao && (
+      {(config.whatsapp_notificacao || config.whatsapp_admin) && (
         <a
-          href={`https://wa.me/55${(config.whatsapp_notificacao || '').replace(/\D/g, '')}`}
+          href={`https://wa.me/55${(config.whatsapp_notificacao || config.whatsapp_admin || '').replace(/\D/g, '')}`}
           target="_blank"
           rel="noreferrer"
           className="fixed bottom-6 right-6 p-4 rounded-full shadow-xl hover:shadow-2xl text-white transition-all hover:-translate-y-1 flex items-center justify-center cursor-pointer group z-50"
