@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
-import { Search, Plus, Minus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus, ChevronDown, Filter, Download } from 'lucide-react';
+import { Search, Plus, Minus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus, ChevronDown, Filter, Download, Trash2 } from 'lucide-react';
 import { MovementsModal } from '../components/MovementsModal';
 import { EditProductModal } from '../components/EditProductModal';
 import { useNavigate } from 'react-router-dom';
@@ -88,6 +88,17 @@ export default function Dashboard() {
   const handleMovementSuccess = () => {
     setIsModalOpen(false);
     loadProducts();
+  };
+
+  const handleDeleteProduct = async (id, nome) => {
+    if (window.confirm(`Tem certeza que deseja excluir permanentemente o produto "${nome}"? Esta ação não pode ser desfeita.`)) {
+      try {
+        await api.delete(`/produtos/${id}`);
+        loadProducts();
+      } catch (err) {
+        alert('Erro ao excluir produto: ' + (err.response?.data?.message || err.message));
+      }
+    }
   };
 
   const exportToCSV = () => {
@@ -372,6 +383,9 @@ export default function Dashboard() {
                             </button>
                             <button onClick={() => openEditModal(product)} className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all" title="Editar Produto">
                               <Pencil size={18} />
+                            </button>
+                            <button onClick={() => handleDeleteProduct(product.id, product.nome)} className="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all" title="Excluir Produto">
+                              <Trash2 size={18} />
                             </button>
                           </div>
                         </td>
