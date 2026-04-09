@@ -450,30 +450,9 @@ export default function Dashboard() {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end space-x-2">
                             <button 
-                              onClick={() => handleQuickAdjustment(product, 1)} 
-                              className="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm active:scale-95" 
-                              title="Aumentar +1 (Rápido)"
-                            >
-                              <Plus size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleQuickAdjustment(product, -1)} 
-                              className="bg-red-100 text-red-700 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm active:scale-95" 
-                              title="Diminuir -1 (Rápido)"
-                            >
-                              <Minus size={18} />
-                            </button>
-                            <button 
-                              onClick={() => openModal(product, 'entrada')} 
-                              className="bg-gray-100 text-gray-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm" 
-                              title="Entrada Detalhada"
-                            >
-                              <PackagePlus size={18} />
-                            </button>
-                            <button 
                               onClick={() => openEditModal(product)} 
                               className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm" 
-                              title="Editar Detalhes"
+                              title="Editar Detalhes / Estoque"
                             >
                               <Pencil size={18} />
                             </button>
