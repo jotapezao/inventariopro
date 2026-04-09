@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalType, setModalType] = useState('entrada');
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const loadCategories = async () => {
     try {
@@ -121,7 +122,9 @@ export default function Dashboard() {
   const getImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    return `/${path}`;
+    // Remove caminhos absolutos do servidor se existirem (correção para deploys anteriores)
+    const cleanPath = path.replace(/.*\/uploads\//, 'uploads/');
+    return `/${cleanPath}`;
   };
 
   return (
@@ -247,7 +250,12 @@ export default function Dashboard() {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
                             {product.foto ? (
-                              <img className="h-10 w-10 rounded object-cover shadow-sm" src={getImageUrl(product.foto)} alt={product.nome} />
+                              <img 
+                                className="h-10 w-10 rounded object-cover shadow-sm cursor-zoom-in hover:opacity-80 transition-opacity" 
+                                src={getImageUrl(product.foto)} 
+                                alt={product.nome} 
+                                onClick={() => setSelectedImage(getImageUrl(product.foto))}
+                              />
                             ) : (
                               <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-100">
                                 <FileBox size={18} />
@@ -310,6 +318,28 @@ export default function Dashboard() {
           onClose={() => setIsEditModalOpen(false)}
           onSuccess={() => { setIsEditModalOpen(false); loadProducts(); }}
         />
+      )}
+
+      {/* Modal de Zoom de Imagem */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl w-full flex items-center justify-center">
+            <img 
+              src={selectedImage} 
+              alt="Zoom" 
+              className="max-h-[90vh] max-w-full rounded-2xl shadow-2xl object-contain animate-in zoom-in-95 duration-300" 
+            />
+            <button 
+              className="absolute top-[-40px] right-0 text-white hover:text-gray-300 font-bold flex items-center gap-2 px-3 py-1 bg-white/10 rounded-lg backdrop-blur-md"
+              onClick={() => setSelectedImage(null)}
+            >
+               Fechar [X]
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

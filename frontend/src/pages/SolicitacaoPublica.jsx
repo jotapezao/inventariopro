@@ -39,7 +39,11 @@ export default function SolicitacaoPublica() {
 
   useEffect(() => {
     loadCategories();
-    api.get('/configuracoes').then(res => setAdminPhone(res.data?.whatsapp_admin)).catch(() => {});
+    api.get('/configuracoes').then(res => {
+      // Fallback: busca whatsapp_notificacao se whatsapp_admin estiver vazio
+      const phone = res.data?.whatsapp_admin || res.data?.whatsapp_notificacao;
+      setAdminPhone(phone);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -185,6 +189,14 @@ export default function SolicitacaoPublica() {
     return `https://wa.me/55${cleanPhone}?text=${text}`;
   };
 
+  const handleFinish = () => {
+    const link = buildWhatsappLink();
+    if (adminPhone && link !== '#') {
+      window.open(link, '_blank');
+    }
+    navigate('/');
+  };
+
   if (success) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -199,19 +211,13 @@ export default function SolicitacaoPublica() {
           <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-8">O administrador será notificado em breve.</p>
           
           <div className="space-y-3">
-            {adminPhone && (
-              <a 
-                href={buildWhatsappLink()} 
-                target="_blank" 
-                rel="noreferrer"
-                className="w-full flex items-center justify-center bg-green-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-green-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-              >
-                Enviar Comprovante WhatsApp
-              </a>
-            )}
-            <button onClick={() => navigate('/')} className="w-full bg-indigo-600 text-white px-6 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+            <button 
+              onClick={handleFinish} 
+              className="w-full bg-indigo-600 text-white px-6 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 flex items-center justify-center gap-2"
+            >
               Voltar ao Início
             </button>
+            <p className="text-[10px] text-gray-400 font-medium">Auto-enviar comprovante ao retornar</p>
           </div>
         </div>
       </div>

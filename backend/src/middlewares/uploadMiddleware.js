@@ -35,9 +35,9 @@ if (useCloudinary) {
   storage = multer.diskStorage({
     destination: function (req, file, cb) {
       const isSolicitation = req.originalUrl.includes('solicitacoes');
-      // Usar path.resolve para garantir que o caminho seja absoluto e aponte para o volume montado
-      const absolutePath = path.resolve(__dirname, '../../uploads', isSolicitation ? 'solicitacoes' : 'produtos');
-      cb(null, absolutePath);
+      // Caminho relativo para que o req.file.path seja salvo corretamente no banco (ex: uploads/produtos/...)
+      const folder = isSolicitation ? 'uploads/solicitacoes' : 'uploads/produtos';
+      cb(null, folder);
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
