@@ -99,7 +99,7 @@ const createTables = async () => {
       }
     }
 
-    // Tabela Produtos com tipo_id
+    // Tabela Produtos com tipo_id e estoque_minimo
     await client.query(`
       CREATE TABLE IF NOT EXISTS Produtos (
         id SERIAL PRIMARY KEY,
@@ -108,6 +108,7 @@ const createTables = async () => {
         tipo_id INTEGER REFERENCES Tipos(id),
         codigo TEXT,
         quantidade INTEGER DEFAULT 0,
+        estoque_minimo INTEGER DEFAULT NULL,
         unidade TEXT NOT NULL,
         localizacao TEXT,
         foto TEXT,
@@ -118,6 +119,11 @@ const createTables = async () => {
     // Migração segura: adicionar tipo_id se não existir
     await client.query(`
       ALTER TABLE Produtos ADD COLUMN IF NOT EXISTS tipo_id INTEGER REFERENCES Tipos(id)
+    `);
+
+    // Migração segura: adicionar estoque_minimo se não existir
+    await client.query(`
+      ALTER TABLE Produtos ADD COLUMN IF NOT EXISTS estoque_minimo INTEGER DEFAULT NULL
     `);
 
     // Tabela Movimentacoes

@@ -146,9 +146,17 @@ exports.updateStatus = async (req, res) => {
 
   const client = await db.pool.connect();
   try {
-    const checkStatus = await client.query('SELECT status, tipo_solicitacao FROM Solicitacoes WHERE id = $1', [id]);
-    if (checkStatus.rows.length === 0) return res.status(404).json({ message: 'Solicitação não encontrada.' });
-    if (checkStatus.rows[0].status !== 'pendente') return res.status(400).json({ message: 'Esta solicitação já foi processada.' });
+    await client.query('BEGIN');
+
+    const checkStatus = await client.query('SELECT status, tipo_solicitacao FROM Solicitacoes WHERE id = $1 FOR UPDATE', [id]);
+    if (checkStatus.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Solicitação não encontrada.' });
+    }
+    if (checkStatus.rows[0].status !== 'pendente') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'Esta solicitação já foi processada.' });
+    }
 
     const tipoSolicitacao = checkStatus.rows[0].tipo_solicitacao;
 
@@ -157,17 +165,16 @@ exports.updateStatus = async (req, res) => {
         'UPDATE Solicitacoes SET status = $1, data_aprovacao = CURRENT_TIMESTAMP, aprovado_por = $2 WHERE id = $3',
         [status, aprovado_por, id]
       );
+      await client.query('COMMIT');
       return res.json({ message: 'Solicitação rejeitada com sucesso.' });
     }
 
-    // Aprovação
+    // Aprovação — busca os itens dentro da transação
     const itemsResult = await client.query(
       'SELECT * FROM ItensSolicitacao WHERE solicitacao_id = $1',
       [id]
     );
     const items = itemsResult.rows;
-
-    await client.query('BEGIN');
 
     if (tipoSolicitacao === 'saida') {
       // Aprovar SAÍDA: deduzir estoque

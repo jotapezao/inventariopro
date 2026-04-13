@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 import {
   Search, Trash2, CheckCircle, AlertTriangle,
   PackageMinus, PackagePlus, ChevronDown, User, ArrowLeft, Camera, Image as ImageIcon
@@ -9,6 +10,7 @@ import {
 export default function SolicitacaoPublica() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const tipo = searchParams.get('tipo') || 'saida'; // 'saida' ou 'entrada'
 
   const isSaida = tipo === 'saida';
@@ -147,7 +149,10 @@ export default function SolicitacaoPublica() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!nomeSolicitante.trim()) return setError('Informe seu nome para continuar.');
+    if (!nomeSolicitante.trim()) {
+      toast.warning('Informe seu nome para continuar.');
+      return setError('Informe seu nome para continuar.');
+    }
 
     const itens = isSaida
       ? basket.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade }))
@@ -158,8 +163,14 @@ export default function SolicitacaoPublica() {
           quantidade: i.quantidade
         }));
 
-    if (isSaida && itens.length === 0) return setError('Selecione ao menos um produto.');
-    if (!isSaida && entradaItens.every(i => !i.nome_produto_livre.trim())) return setError('Informe ao menos um produto.');
+    if (isSaida && itens.length === 0) {
+      toast.warning('Selecione ao menos um produto.');
+      return setError('Selecione ao menos um produto.');
+    }
+    if (!isSaida && entradaItens.every(i => !i.nome_produto_livre.trim())) {
+      toast.warning('Informe ao menos um produto.');
+      return setError('Informe ao menos um produto.');
+    }
 
     setLoading(true);
     setError('');
@@ -188,8 +199,11 @@ export default function SolicitacaoPublica() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setSuccess(true);
+      toast.success('Solicitação enviada com sucesso!');
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao enviar. Tente novamente.');
+      const msg = err.response?.data?.message || 'Erro ao enviar. Tente novamente.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

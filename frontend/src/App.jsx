@@ -1,6 +1,7 @@
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AppConfigProvider } from './contexts/AppConfigContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { AppRoutes } from './routes';
 
 function App() {
@@ -8,7 +9,9 @@ function App() {
     <ThemeProvider>
       <AppConfigProvider>
         <AuthProvider>
-          <AppRoutes />
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
         </AuthProvider>
       </AppConfigProvider>
     </ThemeProvider>

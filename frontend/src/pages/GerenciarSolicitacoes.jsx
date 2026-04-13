@@ -2,9 +2,14 @@ import { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
 import { AuthContext } from '../contexts/AuthContext';
 import { Clock, CheckCircle, XCircle, ChevronDown, ChevronUp, User, ClipboardList, AlertCircle, RefreshCw } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../components/ConfirmModal';
 
 export default function GerenciarSolicitacoes() {
   const { user } = useContext(AuthContext);
+  const toast = useToast();
+  const [confirm, ConfirmModal] = useConfirm();
+  
   const [solicitations, setSolicitations] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,8 +21,11 @@ export default function GerenciarSolicitacoes() {
 
   useEffect(() => {
     loadSolicitations();
-    api.get('/config/whatsapp_notificacao')
-      .then(res => setGlobalWhatsapp(res.data?.valor || ''))
+    api.get('/configuracoes')
+      .then(res => {
+        const phone = res.data?.whatsapp_notificacao || res.data?.whatsapp_admin || '';
+        setGlobalWhatsapp(phone);
+      })
       .catch(() => {});
   }, [activeTab]);
 
@@ -29,6 +37,7 @@ export default function GerenciarSolicitacoes() {
     } catch (err) {
       console.error(err);
       setError('Erro ao carregar solicitações.');
+      toast.error('Erro ao carregar solicitações.');
     } finally {
       setLoading(false);
     }
@@ -45,7 +54,15 @@ export default function GerenciarSolicitacoes() {
   };
 
   const updateStatus = async (id, status) => {
-    if (!window.confirm(`Tem certeza que deseja ${status === 'aprovada' ? 'aprovar' : 'rejeitar'} esta solicitação?`)) return;
+    const isAprovar = status === 'aprovada';
+    const ok = await confirm({
+      title: `${isAprovar ? 'Aprovar' : 'Rejeitar'} Solicitação?`,
+      message: `Tem certeza que deseja ${isAprovar ? 'aprovar' : 'rejeitar'} esta solicitação?`,
+      confirmLabel: isAprovar ? 'Aprovar' : 'Rejeitar',
+      variant: isAprovar ? 'info' : 'danger'
+    });
+    
+    if (!ok) return;
     
     setActionLoading(true);
     try {
@@ -61,10 +78,12 @@ export default function GerenciarSolicitacoes() {
         }
       }
 
+      toast.success(`Solicitação #${id} ${isAprovar ? 'aprovada' : 'rejeitada'} com sucesso.`);
       setSelectedRequest(null);
       loadSolicitations();
     } catch (err) {
-      alert(err.response?.data?.message || 'Erro ao processar solicitação.');
+      const msg = err.response?.data?.message || 'Erro ao processar solicitação.';
+      toast.error(msg);
     } finally {
       setActionLoading(false);
     }
@@ -241,6 +260,7 @@ export default function GerenciarSolicitacoes() {
           </div>
         </div>
       )}
+      {ConfirmModal}
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useAppConfig } from '../contexts/AppConfigContext';
 import api from '../services/api';
+import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../components/ConfirmModal';
 import {
   Users, AlertCircle, Trash2, UserPlus, CheckCircle,
   XCircle, Tag, Layers, ChevronDown, KeyRound, Eye, EyeOff, X, Plus,
@@ -9,7 +11,7 @@ import {
 } from 'lucide-react';
 
 // ─── Modal de Troca de Senha ───
-function PasswordModal({ user: targetUser, onClose, onSuccess, showMsg }) {
+function PasswordModal({ user: targetUser, onClose, onSuccess, toast }) {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmar, setConfirmar] = useState('');
   const [show, setShow] = useState(false);
@@ -17,15 +19,15 @@ function PasswordModal({ user: targetUser, onClose, onSuccess, showMsg }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (novaSenha !== confirmar) return showMsg('error', 'As senhas não coincidem.');
-    if (novaSenha.length < 4) return showMsg('error', 'A senha deve ter ao menos 4 caracteres.');
+    if (novaSenha !== confirmar) return toast.warning('As senhas não coincidem.');
+    if (novaSenha.length < 4) return toast.warning('A senha deve ter ao menos 4 caracteres.');
     setLoading(true);
     try {
       await api.put(`/auth/usuarios/${targetUser.id}/senha`, { novaSenha });
-      showMsg('success', `Senha de "${targetUser.nome}" alterada com sucesso!`);
+      toast.success(`Senha de "${targetUser.nome}" alterada com sucesso!`);
       onClose();
     } catch (err) {
-      showMsg('error', err.response?.data?.message || 'Erro ao alterar senha.');
+      toast.error(err.response?.data?.message || 'Erro ao alterar senha.');
     } finally { setLoading(false); }
   };
 
@@ -69,7 +71,9 @@ function PasswordModal({ user: targetUser, onClose, onSuccess, showMsg }) {
 // ─── Componente Principal ───
 export default function Configuracoes() {
   const { user } = useContext(AuthContext);
-  const { config, setConfig, refreshConfig, EMOJI_OPTIONS, COLOR_OPTIONS } = useAppConfig();
+  const { config, setConfig, EMOJI_OPTIONS, COLOR_OPTIONS } = useAppConfig();
+  const toast = useToast();
+  const [confirm, ConfirmModal] = useConfirm();
 
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -81,7 +85,6 @@ export default function Configuracoes() {
   const [selectedCatForTipo, setSelectedCatForTipo] = useState('');
   const [newTipoName, setNewTipoName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
   const [savingConfig, setSavingConfig] = useState(false);
 
   // Estado local do form de identidade visual
@@ -134,20 +137,15 @@ export default function Configuracoes() {
     } catch (e) { console.error(e); }
   };
 
-  const showMsg = (type, text) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage({ type: '', text: '' }), 4000);
-  };
-
   // ─── Salvar todas as configs de uma vez ───
   const handleSaveAllConfigs = async () => {
     setSavingConfig(true);
     try {
       await api.put('/configuracoes', localConfig);
       setConfig(prev => ({ ...prev, ...localConfig }));
-      showMsg('success', 'Configurações salvas com sucesso!');
+      toast.success('Configurações salvas com sucesso!');
     } catch (err) {
-      showMsg('error', err.response?.data?.message || 'Erro ao salvar configurações.');
+      toast.error(err.response?.data?.message || 'Erro ao salvar configurações.');
     } finally { setSavingConfig(false); }
   };
 
@@ -156,39 +154,84 @@ export default function Configuracoes() {
     e.preventDefault(); setLoading(true);
     try {
       await api.post('/auth/register', newUser);
-      showMsg('success', 'Usuário criado!');
+      toast.success('Usuário criado com sucesso!');
       setNewUser({ nome: '', usuario: '', email: '', senha: '', tipo: 'Funcionário' });
       setShowUserForm(false); loadData();
-    } catch (err) { showMsg('error', err.response?.data?.message || 'Erro ao criar usuário.'); }
+    } catch (err) { toast.error(err.response?.data?.message || 'Erro ao criar usuário.'); }
     finally { setLoading(false); }
   };
-  const handleDeleteUser = async (id) => {
-    if (!window.confirm('Excluir este usuário?')) return;
-    try { await api.delete(`/auth/usuarios/${id}`); showMsg('success', 'Usuário excluído!'); loadData(); }
-    catch (err) { showMsg('error', err.response?.data?.message || 'Erro ao excluir.'); }
+
+  const handleDeleteUser = async (u) => {
+    const ok = await confirm({
+      title: 'Excluir Usuário?',
+      message: `Tem certeza que deseja excluir o usuário "${u.nome}"?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger'
+    });
+    if (!ok) return;
+    try { 
+      await api.delete(`/auth/usuarios/${u.id}`); 
+      toast.success('Usuário excluído!'); 
+      loadData(); 
+    }
+    catch (err) { toast.error(err.response?.data?.message || 'Erro ao excluir.'); }
   };
 
   // ─── Categorias ───
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
-    try { await api.post('/categorias', { nome: newCategoryName }); setNewCategoryName(''); loadData(); showMsg('success', 'Categoria adicionada!'); }
-    catch (err) { showMsg('error', err.response?.data?.message || 'Erro.'); }
+    try { 
+      await api.post('/categorias', { nome: newCategoryName }); 
+      setNewCategoryName(''); 
+      loadData(); 
+      toast.success('Categoria adicionada!'); 
+    }
+    catch (err) { toast.error(err.response?.data?.message || 'Erro ao adicionar categoria.'); }
   };
-  const handleDeleteCategory = async (id) => {
-    if (!window.confirm('Excluir esta categoria e seus tipos?')) return;
-    try { await api.delete(`/categorias/${id}`); if (String(selectedCatForTipo) === String(id)) setSelectedCatForTipo(''); loadData(); }
-    catch (err) { showMsg('error', err.response?.data?.message || 'Erro.'); }
+
+  const handleDeleteCategory = async (cat) => {
+    const ok = await confirm({
+      title: 'Excluir Categoria?',
+      message: `Tem certeza que deseja excluir "${cat.nome}"? Isso excluirá todos os tipos associados a ela.`,
+      confirmLabel: 'Excluir',
+      variant: 'danger'
+    });
+    if (!ok) return;
+    try { 
+      await api.delete(`/categorias/${cat.id}`); 
+      if (String(selectedCatForTipo) === String(cat.id)) setSelectedCatForTipo(''); 
+      loadData(); 
+      toast.success('Categoria excluída!');
+    }
+    catch (err) { toast.error(err.response?.data?.message || 'Erro ao excluir categoria.'); }
   };
 
   // ─── Tipos ───
   const handleAddTipo = async () => {
     if (!newTipoName.trim() || !selectedCatForTipo) return;
-    try { await api.post('/tipos', { nome: newTipoName, categoria_id: selectedCatForTipo }); setNewTipoName(''); loadTipos(selectedCatForTipo); showMsg('success', 'Tipo adicionado!'); }
-    catch (err) { showMsg('error', err.response?.data?.message || 'Erro.'); }
+    try { 
+      await api.post('/tipos', { nome: newTipoName, categoria_id: selectedCatForTipo }); 
+      setNewTipoName(''); 
+      loadTipos(selectedCatForTipo); 
+      toast.success('Tipo adicionado!'); 
+    }
+    catch (err) { toast.error(err.response?.data?.message || 'Erro ao adicionar tipo.'); }
   };
-  const handleDeleteTipo = async (id) => {
-    try { await api.delete(`/tipos/${id}`); loadTipos(selectedCatForTipo); }
-    catch (err) { showMsg('error', err.response?.data?.message || 'Erro.'); }
+
+  const handleDeleteTipo = async (tipo) => {
+    const ok = await confirm({
+      title: 'Excluir Tipo?',
+      message: `Tem certeza que deseja excluir "${tipo.nome}"?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger'
+    });
+    if (!ok) return;
+    try { 
+      await api.delete(`/tipos/${tipo.id}`); 
+      loadTipos(selectedCatForTipo); 
+      toast.success('Tipo excluído!');
+    }
+    catch (err) { toast.error(err.response?.data?.message || 'Erro ao excluir tipo.'); }
   };
 
   if (user?.tipo !== 'Administrador') {
@@ -217,12 +260,6 @@ export default function Configuracoes() {
             Personalização, usuários e categorias do sistema
           </p>
         </div>
-        {message.text && (
-          <div className={`px-4 py-2.5 rounded-xl flex items-center gap-2 text-sm font-semibold shadow-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-            {message.type === 'success' ? <CheckCircle size={16} /> : <XCircle size={16} />}
-            {message.text}
-          </div>
-        )}
       </div>
 
       {/* ─── SEÇÃO: Identidade Visual ─── */}
@@ -394,7 +431,7 @@ export default function Configuracoes() {
             {showUserForm && (
               <div className="mb-5 p-4 rounded-xl border" style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--border)' }}>
                 <form onSubmit={handleCreateUser} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input placeholder="Nome Completo" value={newUser.nome} onChange={e => setNewUser({ ...newUser, nome: e.target.value })} required className="input-base" />
+                  <input placeholder="Nome Completos" value={newUser.nome} onChange={e => setNewUser({ ...newUser, nome: e.target.value })} required className="input-base" />
                   <input placeholder="Login (usuário)" value={newUser.usuario} onChange={e => setNewUser({ ...newUser, usuario: e.target.value })} required className="input-base" />
                   <input type="email" placeholder="E-mail" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required className="input-base" />
                   <input type="password" placeholder="Senha inicial" value={newUser.senha} onChange={e => setNewUser({ ...newUser, senha: e.target.value })} required className="input-base" />
@@ -443,7 +480,7 @@ export default function Configuracoes() {
                           <button onClick={() => setPasswordModal(u)} title="Trocar Senha" className="p-1.5 rounded-lg hover:bg-violet-50 transition" style={{ color: 'var(--accent)' }}>
                             <KeyRound size={16} />
                           </button>
-                          <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === user.id} title="Excluir" className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 disabled:opacity-20 transition">
+                          <button onClick={() => handleDeleteUser(u)} disabled={u.id === user.id} title="Excluir" className="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 disabled:opacity-20 transition">
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -474,7 +511,7 @@ export default function Configuracoes() {
               {categories.map(cat => (
                 <span key={cat.id} className="group flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-default border" style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent)', borderColor: 'var(--accent-light)' }}>
                   {cat.nome}
-                  <button onClick={() => handleDeleteCategory(cat.id)} className="hover:text-red-500 transition ml-1 leading-none opacity-60 hover:opacity-100">&times;</button>
+                  <button onClick={() => handleDeleteCategory(cat)} className="hover:text-red-500 transition ml-1 leading-none opacity-60 hover:opacity-100">&times;</button>
                 </span>
               ))}
               {categories.length === 0 && <p className="text-xs" style={{ color: 'var(--text-sub)' }}>Nenhuma categoria.</p>}
@@ -509,7 +546,7 @@ export default function Configuracoes() {
                     : tipos.map(t => (
                       <span key={t.id} className="group flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition cursor-default border" style={{ backgroundColor: 'var(--accent-light)', color: 'var(--accent)', borderColor: 'var(--accent-light)' }}>
                         {t.nome}
-                        <button onClick={() => handleDeleteTipo(t.id)} className="hover:text-red-500 transition ml-1 leading-none opacity-60 hover:opacity-100">&times;</button>
+                        <button onClick={() => handleDeleteTipo(t)} className="hover:text-red-500 transition ml-1 leading-none opacity-60 hover:opacity-100">&times;</button>
                       </span>
                     ))
                   }
@@ -525,9 +562,10 @@ export default function Configuracoes() {
           user={passwordModal}
           onClose={() => setPasswordModal(null)}
           onSuccess={loadData}
-          showMsg={showMsg}
+          toast={toast}
         />
       )}
+      {ConfirmModal}
     </div>
   );
 }

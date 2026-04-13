@@ -35,6 +35,7 @@ const categoryRoutes = require('./src/routes/categoryRoutes');
 const solicitationRoutes = require('./src/routes/solicitationRoutes');
 const typeRoutes = require('./src/routes/typeRoutes');
 const configRoutes = require('./src/routes/configRoutes');
+const statsRoutes = require('./src/routes/statsRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/produtos', productRoutes);
@@ -43,6 +44,7 @@ app.use('/api/categorias', categoryRoutes);
 app.use('/api/solicitacoes', solicitationRoutes);
 app.use('/api/tipos', typeRoutes);
 app.use('/api/configuracoes', configRoutes);
+app.use('/api/stats', statsRoutes);
 
 // SERVIR FRONTEND
 app.use(express.static(path.join(__dirname, '../frontend/dist')));

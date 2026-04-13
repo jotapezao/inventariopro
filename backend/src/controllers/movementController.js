@@ -46,17 +46,70 @@ exports.createMovement = async (req, res) => {
   }
 };
 
-// Listar movimentações
+// Listar movimentações com filtros e paginação
 exports.getMovements = async (req, res) => {
+  const { tipo, produto_id, data_inicio, data_fim, page = 1, limit = 50 } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  let query = `
+    SELECT m.*, p.nome as produto_nome, u.nome as usuario_nome
+    FROM Movimentacoes m
+    JOIN Produtos p ON m.produto_id = p.id
+    LEFT JOIN Usuarios u ON m.usuario_id = u.id
+    WHERE 1=1
+  `;
+  let countQuery = `SELECT COUNT(*) FROM Movimentacoes m WHERE 1=1`;
+  const params = [];
+  const countParams = [];
+  let idx = 1;
+
+  if (tipo && ['entrada', 'saida'].includes(tipo)) {
+    query += ` AND m.tipo = $${idx}`;
+    countQuery += ` AND m.tipo = $${idx}`;
+    params.push(tipo);
+    countParams.push(tipo);
+    idx++;
+  }
+
+  if (produto_id) {
+    query += ` AND m.produto_id = $${idx}`;
+    countQuery += ` AND m.produto_id = $${idx}`;
+    params.push(produto_id);
+    countParams.push(produto_id);
+    idx++;
+  }
+
+  if (data_inicio) {
+    query += ` AND m.data >= $${idx}`;
+    countQuery += ` AND m.data >= $${idx}`;
+    params.push(data_inicio);
+    countParams.push(data_inicio);
+    idx++;
+  }
+
+  if (data_fim) {
+    query += ` AND m.data <= $${idx}`;
+    countQuery += ` AND m.data <= $${idx}`;
+    params.push(data_fim + ' 23:59:59');
+    countParams.push(data_fim + ' 23:59:59');
+    idx++;
+  }
+
+  query += ` ORDER BY m.id DESC LIMIT $${idx} OFFSET $${idx + 1}`;
+  params.push(parseInt(limit), offset);
+
   try {
-    const result = await db.query(`
-      SELECT m.*, p.nome as produto_nome, u.nome as usuario_nome
-      FROM Movimentacoes m
-      JOIN Produtos p ON m.produto_id = p.id
-      LEFT JOIN Usuarios u ON m.usuario_id = u.id
-      ORDER BY m.id DESC
-    `);
-    res.json(result.rows);
+    const [result, countResult] = await Promise.all([
+      db.query(query, params),
+      db.query(countQuery, countParams)
+    ]);
+    res.json({
+      data: result.rows,
+      total: parseInt(countResult.rows[0].count),
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(parseInt(countResult.rows[0].count) / parseInt(limit))
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

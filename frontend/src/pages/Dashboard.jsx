@@ -1,19 +1,55 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import api from '../services/api';
-import { Search, Plus, Minus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus, ChevronDown, Filter, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import {
+  Search, Plus, FileBox, RefreshCcw, LogIn, PackageMinus, PackagePlus,
+  ChevronDown, Filter, Download, Trash2, ArrowUpDown, ArrowUp, ArrowDown,
+  Package, TrendingUp, ClipboardList, Activity, AlertTriangle
+} from 'lucide-react';
 import { MovementsModal } from '../components/MovementsModal';
 import { EditProductModal } from '../components/EditProductModal';
+import { useConfirm } from '../components/ConfirmModal';
+import { useToast } from '../contexts/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
+
+// ─── Card de Estatística ───
+function StatCard({ icon, label, value, color, sub }) {
+  const colors = {
+    blue:   { bg: 'bg-blue-50',   icon: 'text-blue-500',   val: 'text-blue-700',   border: 'border-blue-100' },
+    green:  { bg: 'bg-emerald-50', icon: 'text-emerald-500', val: 'text-emerald-700', border: 'border-emerald-100' },
+    violet: { bg: 'bg-violet-50', icon: 'text-violet-500', val: 'text-violet-700', border: 'border-violet-100' },
+    amber:  { bg: 'bg-amber-50',  icon: 'text-amber-500',  val: 'text-amber-700',  border: 'border-amber-100' },
+    red:    { bg: 'bg-red-50',    icon: 'text-red-500',    val: 'text-red-700',    border: 'border-red-100' },
+  };
+  const c = colors[color] || colors.blue;
+  return (
+    <div className={`bg-white rounded-2xl border ${c.border} p-5 shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow`}>
+      <div className={`${c.bg} p-3 rounded-xl flex-shrink-0`}>
+        <span className={c.icon}>{icon}</span>
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest truncate">{label}</p>
+        <p className={`text-2xl font-extrabold mt-0.5 ${c.val}`}>{value ?? '—'}</p>
+        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { signed } = useContext(AuthContext);
   const navigate = useNavigate();
+  const toast = useToast();
+  const [confirm, ConfirmModal] = useConfirm();
 
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Stats
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Filtros
   const [categories, setCategories] = useState([]);
@@ -31,6 +67,18 @@ export default function Dashboard() {
 
   // Ordenação
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' });
+
+  const loadStats = async () => {
+    setStatsLoading(true);
+    try {
+      const res = await api.get('/stats');
+      setStats(res.data);
+    } catch (e) {
+      console.error('Stats error:', e);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -57,7 +105,7 @@ export default function Dashboard() {
       const response = await api.get(`/produtos?${params.toString()}`);
       setProducts(response.data);
     } catch (error) {
-      console.error("Erro ao carregar produtos:", error);
+      console.error('Erro ao carregar produtos:', error);
     } finally {
       setLoading(false);
     }
@@ -65,6 +113,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadCategories();
+    loadStats();
   }, []);
 
   useEffect(() => {
@@ -91,52 +140,42 @@ export default function Dashboard() {
   const handleMovementSuccess = () => {
     setIsModalOpen(false);
     loadProducts();
+    loadStats();
   };
 
   const handleQuickAdjustment = async (product, delta) => {
-    // Não permite saída maior que o estoque
     if (delta < 0 && product.quantidade + delta < 0) {
-      alert(`Estoque insuficiente para reduzir. Disponível: ${product.quantidade}`);
+      toast.warning(`Estoque insuficiente para reduzir. Disponível: ${product.quantidade}`);
       return;
     }
-
     try {
-      // Atualização otimista na UI
-      setProducts(prev => prev.map(p => 
-        p.id === product.id ? { ...p, quantidade: Math.max(0, p.quantidade + delta) } : p
-      ));
-
+      setProducts(prev =>
+        prev.map(p => p.id === product.id ? { ...p, quantidade: Math.max(0, p.quantidade + delta) } : p)
+      );
       await api.post('/movimentacoes', {
         produto_id: product.id,
         tipo: delta > 0 ? 'entrada' : 'saida',
         quantidade: Math.abs(delta)
       });
-      // Recarrega para garantir sincronia com BD
       loadProducts();
+      loadStats();
     } catch (err) {
-      alert('Erro no ajuste rápido: ' + (err.response?.data?.message || err.message));
-      loadProducts(); // Reverte em caso de erro
+      toast.error('Erro no ajuste rápido: ' + (err.response?.data?.message || err.message));
+      loadProducts();
     }
   };
 
   const handleSort = (key) => {
     let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
     setSortConfig({ key, direction });
   };
 
   const sortedProducts = [...products].sort((a, b) => {
     if (!sortConfig.key) return 0;
-    
     let aVal = a[sortConfig.key];
     let bVal = b[sortConfig.key];
-
-    // Tratamento especial para nomes de categorias/tipos que vêm de joins
-    if (sortConfig.key === 'categoria') aVal = a.categoria_nome;
-    if (sortConfig.key === 'categoria') bVal = b.categoria_nome;
-    
+    if (sortConfig.key === 'categoria') { aVal = a.categoria_nome; bVal = b.categoria_nome; }
     if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
@@ -144,40 +183,42 @@ export default function Dashboard() {
 
   const getSortIcon = (key) => {
     if (sortConfig.key !== key) return <ArrowUpDown size={14} className="ml-1 opacity-30" />;
-    return sortConfig.direction === 'asc' 
-      ? <ArrowUp size={14} className="ml-1 text-indigo-500" /> 
+    return sortConfig.direction === 'asc'
+      ? <ArrowUp size={14} className="ml-1 text-indigo-500" />
       : <ArrowDown size={14} className="ml-1 text-indigo-500" />;
   };
 
   const handleDeleteProduct = async (id, nome) => {
-    if (window.confirm(`Tem certeza que deseja excluir permanentemente o produto "${nome}"? Esta ação não pode ser desfeita.`)) {
-      try {
-        await api.delete(`/produtos/${id}`);
-        loadProducts();
-      } catch (err) {
-        alert('Erro ao excluir produto: ' + (err.response?.data?.message || err.message));
-      }
+    const ok = await confirm({
+      title: `Excluir "${nome}"?`,
+      message: 'Esta ação não pode ser desfeita. O histórico de movimentações será preservado.',
+      confirmLabel: 'Excluir Produto',
+      cancelLabel: 'Cancelar',
+      variant: 'danger',
+    });
+    if (!ok) return;
+    try {
+      await api.delete(`/produtos/${id}`);
+      toast.success(`Produto "${nome}" excluído com sucesso.`);
+      loadProducts();
+      loadStats();
+    } catch (err) {
+      toast.error('Erro ao excluir produto: ' + (err.response?.data?.message || err.message));
     }
   };
 
   const exportToCSV = () => {
     if (!products || products.length === 0) return;
-    
-    // Cabeçalhos (adicionando BOM para acentos abrirem corretamente no Excel)
     let csvContent = '\uFEFF';
-    
     csvContent += 'ID;Nome do Produto;Código;Categoria;Tipo;Localização;Quantidade;Unidade\n';
-    
     products.forEach(p => {
       const nome = p.nome ? p.nome.replace(/;/g, ',') : '';
       const codigo = p.codigo || '';
       const categoria = p.categoria_nome || '';
       const tipo = p.tipo_nome || '';
       const loc = p.localizacao ? p.localizacao.replace(/;/g, ',') : '';
-      
       csvContent += `${p.id};${nome};${codigo};${categoria};${tipo};${loc};${p.quantidade};${p.unidade}\n`;
     });
-    
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -186,36 +227,30 @@ export default function Dashboard() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success('Exportação concluída!');
   };
 
   const handleImportCSV = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setImporting(true);
     const reader = new FileReader();
-
     reader.onload = async (event) => {
       try {
         const text = event.target.result;
         const rows = text.split('\n').map(row => row.split(';'));
-        
         if (rows.length < 2) {
-          alert('Planilha vazia ou com formato incorreto.');
+          toast.error('Planilha vazia ou com formato incorreto.');
           return;
         }
-
         const headers = rows[0].map(h => h.trim().toLowerCase());
         const dataRows = rows.slice(1);
-
         const productsToImport = dataRows.map(row => {
           if (row.length < 2) return null;
-          
           const getVal = (search) => {
             const idx = headers.findIndex(h => h.includes(search));
             return idx !== -1 ? row[idx]?.trim() : '';
           };
-
           return {
             nome: getVal('nome'),
             codigo: getVal('código'),
@@ -228,22 +263,20 @@ export default function Dashboard() {
         }).filter(p => p && p.nome && p.categoria_nome);
 
         if (productsToImport.length === 0) {
-          alert('Nenhum produto válido encontrado. Verifique as colunas (Nome, Categoria, Unidade).');
+          toast.error('Nenhum produto válido encontrado. Verifique as colunas (Nome, Categoria, Unidade).');
           return;
         }
-
         const response = await api.post('/produtos/importar', { products: productsToImport });
-        alert(`Importação concluída!\nSucessos: ${response.data.successCount}\nErros: ${response.data.errors.length}`);
+        toast.success(`Importação concluída! Sucessos: ${response.data.successCount} | Erros: ${response.data.errors.length}`);
         loadProducts();
+        loadStats();
       } catch (err) {
-        console.error(err);
-        alert('Erro ao processar planilha: ' + (err.response?.data?.message || err.message));
+        toast.error('Erro ao processar planilha: ' + (err.response?.data?.message || err.message));
       } finally {
         setImporting(false);
-        e.target.value = ''; // Reset input
+        e.target.value = '';
       }
     };
-
     reader.readAsText(file);
   };
 
@@ -252,19 +285,22 @@ export default function Dashboard() {
   const getImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith('http')) return path;
-    // Remove caminhos absolutos do servidor se existirem (correção para deploys anteriores)
     const cleanPath = path.replace(/.*\/uploads\//, 'uploads/');
     return `/${cleanPath}`;
   };
 
+  const isEstoqueBaixo = (p) => {
+    if (p.quantidade === 0) return true;
+    if (p.estoque_minimo != null && p.quantidade <= p.estoque_minimo) return true;
+    return false;
+  };
+
   return (
     <div>
-      {/* Cabeçalho com botões públicos para não logados */}
+      {/* Cabeçalho público */}
       {!signed && (
         <div className="mb-6 bg-gradient-to-br from-slate-800 to-indigo-900 rounded-2xl p-6 sm:p-8 shadow-xl flex flex-col sm:flex-row gap-6 items-center justify-between relative overflow-hidden">
-          {/* Light flare effect */}
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-indigo-500 blur-[80px] opacity-20 pointer-events-none"></div>
-
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-indigo-500 blur-[80px] opacity-20 pointer-events-none" />
           <div className="text-white z-10 w-full text-center sm:text-left">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Almoxarifado Aberto</h2>
             <p className="text-indigo-200 text-sm mt-1 sm:mt-2">Faça sua solicitação rapidamente sem uso de senha.</p>
@@ -274,19 +310,49 @@ export default function Dashboard() {
               onClick={() => navigate('/solicitar?tipo=saida')}
               className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold px-6 py-3 rounded-xl transition backdrop-blur-sm w-full sm:w-auto hover:shadow-lg"
             >
-              <PackageMinus size={20} />
-              Solicitar Material
+              <PackageMinus size={20} /> Solicitar Material
             </button>
             <button
               onClick={() => navigate('/solicitar?tipo=entrada')}
               className="flex items-center justify-center gap-2 bg-white font-bold px-6 py-3 rounded-xl text-indigo-900 hover:bg-indigo-50 hover:shadow-lg transition shadow-md w-full sm:w-auto hover:-translate-y-0.5"
             >
-              <PackagePlus size={20} />
-              Registrar Entrada
+              <PackagePlus size={20} /> Registrar Entrada
             </button>
           </div>
         </div>
       )}
+
+      {/* Cards de Estatísticas */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard
+          icon={<Package size={22} />}
+          label="Produtos"
+          value={statsLoading ? '...' : stats?.total_produtos}
+          color="blue"
+          sub="cadastrados"
+        />
+        <StatCard
+          icon={<TrendingUp size={22} />}
+          label="Total em Estoque"
+          value={statsLoading ? '...' : stats?.total_estoque?.toLocaleString('pt-BR')}
+          color="green"
+          sub="itens somados"
+        />
+        <StatCard
+          icon={<Activity size={22} />}
+          label="Movimentações Hoje"
+          value={statsLoading ? '...' : stats?.movimentacoes_hoje}
+          color="violet"
+          sub="entradas + saídas"
+        />
+        <StatCard
+          icon={<AlertTriangle size={22} />}
+          label="Estoque Baixo/Zerado"
+          value={statsLoading ? '...' : stats?.produtos_estoque_baixo}
+          color={stats?.produtos_estoque_baixo > 0 ? 'red' : 'green'}
+          sub="precisam atenção"
+        />
+      </div>
 
       {/* Cabeçalho logado */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
@@ -307,16 +373,15 @@ export default function Dashboard() {
           </div>
           {signed && (
             <div className="flex gap-2">
-              {/* Importador Escondido */}
-              <input 
-                type="file" 
-                id="csvImport" 
-                accept=".csv" 
-                className="hidden" 
+              <input
+                type="file"
+                id="csvImport"
+                accept=".csv"
+                className="hidden"
                 onChange={handleImportCSV}
                 disabled={importing}
               />
-              <button 
+              <button
                 onClick={() => document.getElementById('csvImport').click()}
                 className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 hover:-translate-y-0.5 text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50"
                 title="Importar Planilha"
@@ -325,10 +390,9 @@ export default function Dashboard() {
                 {importing ? <RefreshCcw size={18} className="animate-spin" /> : <Plus size={18} />}
                 <span className="hidden sm:inline">Importar CSV</span>
               </button>
-
-              <button 
+              <button
                 onClick={exportToCSV}
-                className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 hover:-translate-y-0.5 text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
+                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 hover:-translate-y-0.5 text-white px-4 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
                 title="Exportar Estoque"
               >
                 <Download size={18} />
@@ -370,8 +434,16 @@ export default function Dashboard() {
             Limpar filtros
           </button>
         )}
+
+        {/* Contador */}
+        {!loading && (
+          <span className="ml-auto text-xs text-gray-400 font-medium">
+            {sortedProducts.length} produto{sortedProducts.length !== 1 ? 's' : ''}
+          </span>
+        )}
       </div>
 
+      {/* Tabela */}
       {loading ? (
         <div className="flex justify-center my-20">
           <RefreshCcw className="animate-spin text-blue-600 h-8 w-8" />
@@ -387,83 +459,103 @@ export default function Dashboard() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort('nome')}
-                    >
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('nome')}>
                       <div className="flex items-center">Produto {getSortIcon('nome')}</div>
                     </th>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort('categoria')}
-                    >
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('categoria')}>
                       <div className="flex items-center">Categoria / Tipo {getSortIcon('categoria')}</div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Localização</th>
-                    <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort('quantidade')}
-                    >
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('quantidade')}>
                       <div className="flex items-center">Estoque {getSortIcon('quantidade')}</div>
                     </th>
                     {signed && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {sortedProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-slate-50 transition-colors duration-150">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            {product.foto ? (
-                              <img 
-                                className="h-10 w-10 rounded object-cover shadow-sm cursor-zoom-in hover:opacity-80 transition-opacity" 
-                                src={getImageUrl(product.foto)} 
-                                alt={product.nome} 
-                                onClick={() => setSelectedImage(getImageUrl(product.foto))}
-                              />
-                            ) : (
-                              <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-100">
-                                <FileBox size={18} />
+                  {sortedProducts.map((product) => {
+                    const baixo = isEstoqueBaixo(product);
+                    return (
+                      <tr key={product.id} className={`hover:bg-slate-50 transition-colors duration-150 ${baixo ? 'bg-red-50/40' : ''}`}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 relative">
+                              {product.foto ? (
+                                <img
+                                  className="h-10 w-10 rounded object-cover shadow-sm cursor-zoom-in hover:opacity-80 transition-opacity"
+                                  src={getImageUrl(product.foto)}
+                                  alt={product.nome}
+                                  onClick={() => setSelectedImage(getImageUrl(product.foto))}
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-100">
+                                  <FileBox size={18} />
+                                </div>
+                              )}
+                              {/* Badge estoque baixo */}
+                              {baixo && (
+                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center" title="Estoque baixo ou zerado">
+                                  <AlertTriangle size={8} className="text-white" />
+                                </span>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-900">{product.nome}</span>
+                                {baixo && (
+                                  <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full border border-red-200">
+                                    {product.quantidade === 0 ? 'ZERADO' : 'BAIXO'}
+                                  </span>
+                                )}
                               </div>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{product.nome}</div>
-                            {product.codigo && <div className="text-xs text-gray-400">#{product.codigo}</div>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-700">{product.categoria_nome || '—'}</div>
-                        {product.tipo_nome && (
-                          <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">{product.tipo_nome}</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.localizacao || '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.quantidade > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {product.quantidade} {product.unidade}
-                        </span>
-                      </td>
-                      {signed && (
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end space-x-2">
-                            <button 
-                              onClick={() => openEditModal(product)} 
-                              className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm" 
-                              title="Editar Detalhes / Estoque"
-                            >
-                              <Pencil size={18} />
-                            </button>
-                            <button onClick={() => handleDeleteProduct(product.id, product.nome)} className="bg-red-50 text-red-400 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm" title="Excluir Produto">
-                              <Trash2 size={18} />
-                            </button>
+                              {product.codigo && <div className="text-xs text-gray-400">#{product.codigo}</div>}
+                            </div>
                           </div>
                         </td>
-                      )}
-                    </tr>
-                  ))}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-700">{product.categoria_nome || '—'}</div>
+                          {product.tipo_nome && (
+                            <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">{product.tipo_nome}</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.localizacao || '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            product.quantidade === 0
+                              ? 'bg-red-100 text-red-800'
+                              : baixo
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {product.quantidade} {product.unidade}
+                          </span>
+                          {product.estoque_minimo != null && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">mín: {product.estoque_minimo}</div>
+                          )}
+                        </td>
+                        {signed && (
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex justify-end space-x-2">
+                              <button
+                                onClick={() => openEditModal(product)}
+                                className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm"
+                                title="Editar Detalhes / Estoque"
+                              >
+                                <Pencil size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(product.id, product.nome)}
+                                className="bg-red-50 text-red-400 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm"
+                                title="Excluir Produto"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -471,6 +563,7 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Modais */}
       {isModalOpen && (
         <MovementsModal
           product={selectedProduct}
@@ -483,23 +576,24 @@ export default function Dashboard() {
         <EditProductModal
           product={selectedProduct}
           onClose={() => setIsEditModalOpen(false)}
-          onSuccess={() => { setIsEditModalOpen(false); loadProducts(); }}
+          onSuccess={() => { setIsEditModalOpen(false); loadProducts(); loadStats(); }}
         />
       )}
+      {ConfirmModal}
 
-      {/* Modal de Zoom de Imagem */}
+      {/* Zoom de Imagem */}
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-4xl w-full flex items-center justify-center">
-            <img 
-              src={selectedImage} 
-              alt="Zoom" 
-              className="max-h-[90vh] max-w-full rounded-2xl shadow-2xl object-contain animate-in zoom-in-95 duration-300" 
+            <img
+              src={selectedImage}
+              alt="Zoom"
+              className="max-h-[90vh] max-w-full rounded-2xl shadow-2xl object-contain animate-in zoom-in-95 duration-300"
             />
-            <button 
+            <button
               className="absolute top-[-40px] right-0 text-white hover:text-gray-300 font-bold flex items-center gap-2 px-3 py-1 bg-white/10 rounded-lg backdrop-blur-md"
               onClick={() => setSelectedImage(null)}
             >

@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { Camera, Upload, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../contexts/ToastContext';
 
 export default function CadastroProduto() {
+  const toast = useToast();
   const generateCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
   const getDefaultFormData = () => ({
@@ -12,6 +14,7 @@ export default function CadastroProduto() {
     tipo_id: '',
     codigo: generateCode(),
     quantidade: '0',
+    estoque_minimo: '',
     unidade: 'unidade',
     localizacao: ''
   });
@@ -25,7 +28,6 @@ export default function CadastroProduto() {
   const [modoCamera, setModoCamera] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -126,6 +128,7 @@ export default function CadastroProduto() {
       }
     } catch (err) {
       setError('Erro ao acessar a câmera. Tente enviar um arquivo.');
+      toast.error('Erro ao acessar a câmera.');
       setModoCamera(false);
     }
   };
@@ -161,7 +164,6 @@ export default function CadastroProduto() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess('');
 
     try {
       const data = new FormData();
@@ -177,7 +179,7 @@ export default function CadastroProduto() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      setSuccess('Produto cadastrado com sucesso!');
+      toast.success('Produto cadastrado com sucesso!');
 
       if (actionType === 'continue') {
         setFormData(getDefaultFormData());
@@ -186,11 +188,13 @@ export default function CadastroProduto() {
         setTipos([]);
         window.scrollTo(0, 0);
       } else {
-        setTimeout(() => navigate('/'), 2000);
+        setTimeout(() => navigate('/'), 1500);
       }
 
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao cadastrar produto.');
+      const msg = err.response?.data?.message || 'Erro ao cadastrar produto.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -203,7 +207,6 @@ export default function CadastroProduto() {
     <div className="max-w-4xl mx-auto bg-white p-8 sm:p-10 rounded-3xl shadow-xl border border-gray-100">
       <h2 className="text-3xl font-extrabold text-gray-800 mb-8 tracking-tight">Novo Produto</h2>
 
-      {success && <div className="mb-4 bg-green-100 p-3 rounded text-green-700 flex items-center"><CheckCircle className="mr-2" />{success}</div>}
       {error && <div className="mb-4 bg-red-100 p-3 rounded text-red-700 flex items-center"><XCircle className="mr-2" />{error}</div>}
 
       <form className="space-y-6">
@@ -296,6 +299,20 @@ export default function CadastroProduto() {
                 <option value="saco">Saco</option>
               </select>
             </div>
+          </div>
+
+          {/* 7. Estoque Mínimo */}
+          <div className="md:col-span-2">
+            <label className={`${labelCls} text-amber-600`}>Estoque Mínimo <span className="text-gray-400 font-normal">(Alerta de reposição)</span></label>
+            <input 
+              name="estoque_minimo" 
+              type="number" 
+              min="0" 
+              placeholder="Ex: 5"
+              value={formData.estoque_minimo} 
+              onChange={handleInputChange} 
+              className={inputCls + " border-amber-100 focus:ring-amber-500"} 
+            />
           </div>
         </div>
 

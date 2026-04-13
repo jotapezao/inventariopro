@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import api from '../services/api';
 import { useAppConfig } from '../contexts/AppConfigContext';
+import { useToast } from '../contexts/ToastContext';
 
 export function MovementsModal({ product, type, onClose, onSuccess }) {
   const { config } = useAppConfig();
+  const toast = useToast();
   const [quantidade, setQuantidade] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,7 +27,7 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
     try {
       await api.post('/movimentacoes', {
         produto_id: product.id,
-        tipo,
+        tipo: type,          // ← BUG CORRIGIDO: era 'tipo' (não declarado), agora usa a prop 'type'
         quantidade: parseInt(quantidade)
       });
 
@@ -36,10 +38,11 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
           const msg = `📦 *Nova Movimentação de Estoque*\n\n*Tipo:* ${isEntrada ? 'Entrada' : 'Saída'}\n*Produto:* ${product.nome}\n*Quantidade:* ${quantidade} ${product.unidade}\n\n_Registrado via API_`;
           const url = `https://wa.me/${numToUse}?text=${encodeURIComponent(msg)}`;
           setSuccessWhatsappUrl(url);
-          return; // Para a execução para mostrar a tela de sucesso
+          return;
         }
       }
 
+      toast.success(`${isEntrada ? 'Entrada' : 'Saída'} de "${product.nome}" registrada com sucesso!`);
       onSuccess();
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao registrar movimentação.');
@@ -105,9 +108,18 @@ export function MovementsModal({ product, type, onClose, onSuccess }) {
                     <div className="mt-2">
                       <p className="text-sm text-gray-500">
                         Estoque atual: <strong>{product.quantidade} {product.unidade}</strong>
+                        {product.estoque_minimo != null && (
+                          <span className="block text-[10px] text-amber-500 font-bold uppercase tracking-tight">Mínimo desejado: {product.estoque_minimo} {product.unidade}</span>
+                        )}
                       </p>
 
                       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+                      {(!isEntrada && product.estoque_minimo != null && (product.quantidade - (parseInt(quantidade) || 0) <= product.estoque_minimo)) && (
+                        <div className="bg-amber-50 border border-amber-200 p-2 rounded-lg mt-2 flex items-start gap-2 animate-pulse">
+                          <span className="text-amber-500 text-lg">⚠️</span>
+                          <p className="text-[10px] text-amber-700 font-medium leading-tight">Esta saída deixará o estoque abaixo ou no limite mínimo definido.</p>
+                        </div>
+                      )}
 
                       <div className="mt-5">
                         <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Quantidade</label>

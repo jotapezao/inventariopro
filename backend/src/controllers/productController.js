@@ -2,7 +2,7 @@ const db = require('../database/db');
 
 // Criar novo produto
 exports.createProduct = async (req, res) => {
-  const { nome, categoria_id, tipo_id, codigo, quantidade, unidade, localizacao } = req.body;
+  const { nome, categoria_id, tipo_id, codigo, quantidade, unidade, localizacao, estoque_minimo } = req.body;
   const foto = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
   console.log('--- Cadastro de Produto ---');
@@ -14,9 +14,11 @@ exports.createProduct = async (req, res) => {
   }
 
   try {
+    const finalEstoqueMinimo = (estoque_minimo !== undefined && estoque_minimo !== '') ? parseInt(estoque_minimo) : null;
+    
     const query = `
-      INSERT INTO Produtos (nome, categoria_id, tipo_id, codigo, quantidade, unidade, localizacao, foto) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO Produtos (nome, categoria_id, tipo_id, codigo, quantidade, unidade, localizacao, foto, estoque_minimo) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id
     `;
     const result = await db.query(query, [
@@ -27,7 +29,8 @@ exports.createProduct = async (req, res) => {
       quantidade ? parseInt(quantidade) : 0,
       unidade,
       localizacao,
-      foto
+      foto,
+      finalEstoqueMinimo
     ]);
     console.log('Produto criado:', result.rows[0].id);
     res.status(201).json({ message: 'Produto cadastrado com sucesso', id: result.rows[0].id, foto });
@@ -55,9 +58,9 @@ exports.getProducts = async (req, res) => {
   let paramIdx = 1;
 
   if (busca) {
-    query += ` AND (p.nome ILIKE $${paramIdx} OR p.codigo ILIKE $${paramIdx + 1})`;
-    params.push(`%${busca}%`, `%${busca}%`);
-    paramIdx += 2;
+    query += ` AND (p.nome ILIKE $${paramIdx} OR p.codigo ILIKE $${paramIdx})`;
+    params.push(`%${busca}%`);
+    paramIdx += 1;
   }
 
   if (categoria_id) {
@@ -102,7 +105,7 @@ exports.getProductById = async (req, res) => {
 // Atualizar produto
 exports.updateProduct = async (req, res) => {
   const { id } = req.params;
-  const { nome, categoria_id, tipo_id, codigo, unidade, localizacao } = req.body;
+  const { nome, categoria_id, tipo_id, codigo, unidade, localizacao, estoque_minimo } = req.body;
   const foto = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
   try {
@@ -110,13 +113,17 @@ exports.updateProduct = async (req, res) => {
     if (checkProduct.rows.length === 0) return res.status(404).json({ message: 'Produto não encontrado.' });
 
     const finalFoto = foto || checkProduct.rows[0].foto;
+    const finalEstoqueMinimo = (estoque_minimo !== undefined && estoque_minimo !== '') ? parseInt(estoque_minimo) : null;
 
     const query = `
       UPDATE Produtos 
-      SET nome = $1, categoria_id = $2, tipo_id = $3, codigo = $4, unidade = $5, localizacao = $6, foto = $7, quantidade = $8
-      WHERE id = $9
+      SET nome = $1, categoria_id = $2, tipo_id = $3, codigo = $4, unidade = $5, localizacao = $6, foto = $7, quantidade = $8, estoque_minimo = $9
+      WHERE id = $10
     `;
-    await db.query(query, [nome, categoria_id, tipo_id || null, codigo, unidade, localizacao, finalFoto, parseInt(req.body.quantidade || 0), id]);
+    await db.query(query, [
+      nome, categoria_id, tipo_id || null, codigo, unidade, localizacao,
+      finalFoto, parseInt(req.body.quantidade || 0), finalEstoqueMinimo, id
+    ]);
     res.json({ message: 'Produto atualizado com sucesso.' });
   } catch (err) {
     res.status(500).json({ error: err.message });

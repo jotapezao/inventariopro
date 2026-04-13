@@ -7,9 +7,10 @@ export function EditProductModal({ product, onClose, onSuccess }) {
   const [categoriaId, setCategoriaId] = useState(product?.categoria_id || '');
   const [tipoId, setTipoId] = useState(product?.tipo_id || '');
   const [codigo, setCodigo] = useState(product?.codigo || '');
-   const [unidade, setUnidade] = useState(product?.unidade || '');
+  const [unidade, setUnidade] = useState(product?.unidade || '');
   const [localizacao, setLocalizacao] = useState(product?.localizacao || '');
   const [quantidade, setQuantidade] = useState(product?.quantidade || 0);
+  const [estoqueMinimo, setEstoqueMinimo] = useState(product?.estoque_minimo ?? '');
   const [foto, setFoto] = useState(null);
   const getInitialPreview = (path) => {
     if (!path) return null;
@@ -66,6 +67,9 @@ export function EditProductModal({ product, onClose, onSuccess }) {
     formData.append('unidade', unidade);
     formData.append('localizacao', localizacao);
     formData.append('quantidade', quantidade);
+    if (estoqueMinimo !== '' && estoqueMinimo !== null) {
+      formData.append('estoque_minimo', estoqueMinimo);
+    }
     if (foto) {
       formData.append('foto', foto);
     }
@@ -151,6 +155,17 @@ export function EditProductModal({ product, onClose, onSuccess }) {
                   value={quantidade}
                   onChange={(e) => setQuantidade(e.target.value)}
                   className="w-full bg-white border-2 border-indigo-100 rounded-xl px-4 py-3 text-lg font-bold text-indigo-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 text-amber-600">Estoque Mínimo (alerta)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={estoqueMinimo}
+                  onChange={(e) => setEstoqueMinimo(e.target.value)}
+                  placeholder="Deixe vazio para desativar"
+                  className="w-full bg-white border-2 border-amber-100 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-amber-400 focus:outline-none transition-all placeholder-gray-300"
                 />
               </div>
             </div>
