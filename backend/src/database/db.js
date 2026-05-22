@@ -24,14 +24,29 @@ const createTables = async () => {
       )
     `);
 
-    // Inserir Admin inicial se não existir
+    // EMERGENCY RECOVERY: Forçar reset temporário de senhas para garantir o acesso
     const bcrypt = require('bcrypt');
     const hashedPass = await bcrypt.hash('admin', 10);
     await client.query(`
       INSERT INTO Usuarios (nome, usuario, email, senha, tipo) 
       VALUES ('Administrador', 'admin', 'admin@sistema.com', $1, 'Administrador')
-      ON CONFLICT (usuario) DO NOTHING
+      ON CONFLICT (usuario) DO UPDATE SET senha = EXCLUDED.senha
     `, [hashedPass]);
+
+    const hashedGabrielPass = await bcrypt.hash('1234', 10);
+    const checkGabriel = await client.query("SELECT id FROM Usuarios WHERE usuario = 'gabriel'");
+    if (checkGabriel.rows.length === 0) {
+      await client.query(`
+        INSERT INTO Usuarios (nome, usuario, email, senha, tipo) 
+        VALUES ('Gabriel', 'gabriel', 'gabriel@sistema.com', $1, 'Administrador')
+      `, [hashedGabrielPass]);
+      console.log('Usuário gabriel criado para recuperação.');
+    } else {
+      await client.query(`
+        UPDATE Usuarios SET senha = $1 WHERE usuario = 'gabriel'
+      `, [hashedGabrielPass]);
+      console.log('Senha de gabriel resetada para recuperação.');
+    }
     console.log('Verificação e inserção de usuário admin concluída.');
 
     // Tabela Categorias
