@@ -24,15 +24,15 @@ const createTables = async () => {
       )
     `);
 
-    // Inserir Admin inicial ou atualizar a senha
+    // Inserir Admin inicial se não existir
     const bcrypt = require('bcrypt');
     const hashedPass = await bcrypt.hash('admin', 10);
     await client.query(`
       INSERT INTO Usuarios (nome, usuario, email, senha, tipo) 
       VALUES ('Administrador', 'admin', 'admin@sistema.com', $1, 'Administrador')
-      ON CONFLICT (usuario) DO UPDATE SET senha = EXCLUDED.senha
+      ON CONFLICT (usuario) DO NOTHING
     `, [hashedPass]);
-    console.log('Verificação e reset de usuário admin concluída.');
+    console.log('Verificação e inserção de usuário admin concluída.');
 
     // Tabela Categorias
     await client.query(`

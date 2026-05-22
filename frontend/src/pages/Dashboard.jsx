@@ -455,72 +455,151 @@ export default function Dashboard() {
               Nenhum produto encontrado.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('nome')}>
-                      <div className="flex items-center">Produto {getSortIcon('nome')}</div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('categoria')}>
-                      <div className="flex items-center">Categoria / Tipo {getSortIcon('categoria')}</div>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Localização</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('quantidade')}>
-                      <div className="flex items-center">Estoque {getSortIcon('quantidade')}</div>
-                    </th>
-                    {signed && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>}
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {sortedProducts.map((product) => {
-                    const baixo = isEstoqueBaixo(product);
-                    return (
-                      <tr key={product.id} className={`hover:bg-slate-50 transition-colors duration-150 ${baixo ? 'bg-red-50/40' : ''}`}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 relative">
-                              {product.foto ? (
-                                <img
-                                  className="h-10 w-10 rounded object-cover shadow-sm cursor-zoom-in hover:opacity-80 transition-opacity"
-                                  src={getImageUrl(product.foto)}
-                                  alt={product.nome}
-                                  onClick={() => setSelectedImage(getImageUrl(product.foto))}
-                                />
-                              ) : (
-                                <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-100">
-                                  <FileBox size={18} />
-                                </div>
-                              )}
-                              {/* Badge estoque baixo */}
-                              {baixo && (
-                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center" title="Estoque baixo ou zerado">
-                                  <AlertTriangle size={8} className="text-white" />
-                                </span>
-                              )}
-                            </div>
-                            <div className="ml-4">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-900">{product.nome}</span>
+            <>
+              {/* Layout para Desktop (Tabela) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('nome')}>
+                        <div className="flex items-center">Produto {getSortIcon('nome')}</div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('categoria')}>
+                        <div className="flex items-center">Categoria / Tipo {getSortIcon('categoria')}</div>
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Localização</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => handleSort('quantidade')}>
+                        <div className="flex items-center">Estoque {getSortIcon('quantidade')}</div>
+                      </th>
+                      {signed && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-100">
+                    {sortedProducts.map((product) => {
+                      const baixo = isEstoqueBaixo(product);
+                      return (
+                        <tr key={product.id} className={`hover:bg-slate-50 transition-colors duration-150 ${baixo ? 'bg-red-50/40' : ''}`}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10 relative">
+                                {product.foto ? (
+                                  <img
+                                    className="h-10 w-10 rounded object-cover shadow-sm cursor-zoom-in hover:opacity-80 transition-opacity"
+                                    src={getImageUrl(product.foto)}
+                                    alt={product.nome}
+                                    onClick={() => setSelectedImage(getImageUrl(product.foto))}
+                                  />
+                                ) : (
+                                  <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-100">
+                                    <FileBox size={18} />
+                                  </div>
+                                )}
                                 {baixo && (
-                                  <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full border border-red-200">
-                                    {product.quantidade === 0 ? 'ZERADO' : 'BAIXO'}
+                                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center" title="Estoque baixo ou zerado">
+                                    <AlertTriangle size={8} className="text-white" />
                                   </span>
                                 )}
                               </div>
-                              {product.codigo && <div className="text-xs text-gray-400">#{product.codigo}</div>}
+                              <div className="ml-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-gray-900">{product.nome}</span>
+                                  {baixo && (
+                                    <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full border border-red-200">
+                                      {product.quantidade === 0 ? 'ZERADO' : 'BAIXO'}
+                                    </span>
+                                  )}
+                                </div>
+                                {product.codigo && <div className="text-xs text-gray-400">#{product.codigo}</div>}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-700">{product.categoria_nome || '—'}</div>
-                          {product.tipo_nome && (
-                            <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">{product.tipo_nome}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-700">{product.categoria_nome || '—'}</div>
+                            {product.tipo_nome && (
+                              <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">{product.tipo_nome}</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.localizacao || '—'}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              product.quantidade === 0
+                                ? 'bg-red-100 text-red-800'
+                                : baixo
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {product.quantidade} {product.unidade}
+                            </span>
+                            {product.estoque_minimo != null && (
+                              <div className="text-[10px] text-gray-400 mt-0.5">mín: {product.estoque_minimo}</div>
+                            )}
+                          </td>
+                          {signed && (
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex justify-end space-x-2">
+                                <button
+                                  onClick={() => openEditModal(product)}
+                                  className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm"
+                                  title="Editar Detalhes / Estoque"
+                                >
+                                  <Pencil size={18} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(product.id, product.nome)}
+                                  className="bg-red-50 text-red-400 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm"
+                                  title="Excluir Produto"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            </td>
                           )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.localizacao || '—'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Layout para Mobile (Cards) */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {sortedProducts.map((product) => {
+                  const baixo = isEstoqueBaixo(product);
+                  return (
+                    <div key={product.id} className={`p-4 flex flex-col gap-3 transition-colors duration-150 ${baixo ? 'bg-red-50/30' : ''}`}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 h-12 w-12 relative">
+                          {product.foto ? (
+                            <img
+                              className="h-12 w-12 rounded-xl object-cover shadow-sm cursor-zoom-in"
+                              src={getImageUrl(product.foto)}
+                              alt={product.nome}
+                              onClick={() => setSelectedImage(getImageUrl(product.foto))}
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-100">
+                              <FileBox size={20} />
+                            </div>
+                          )}
+                          {baixo && (
+                            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
+                              <AlertTriangle size={8} className="text-white" />
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-sm font-semibold text-gray-900 truncate">{product.nome}</span>
+                            {baixo && (
+                              <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full border border-red-200">
+                                {product.quantidade === 0 ? 'ZERADO' : 'BAIXO'}
+                              </span>
+                            )}
+                          </div>
+                          {product.codigo && <div className="text-xs text-gray-400">#{product.codigo}</div>}
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${
                             product.quantidade === 0
                               ? 'bg-red-100 text-red-800'
                               : baixo
@@ -532,33 +611,44 @@ export default function Dashboard() {
                           {product.estoque_minimo != null && (
                             <div className="text-[10px] text-gray-400 mt-0.5">mín: {product.estoque_minimo}</div>
                           )}
-                        </td>
-                        {signed && (
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end space-x-2">
-                              <button
-                                onClick={() => openEditModal(product)}
-                                className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm"
-                                title="Editar Detalhes / Estoque"
-                              >
-                                <Pencil size={18} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProduct(product.id, product.nome)}
-                                className="bg-red-50 text-red-400 hover:bg-red-600 hover:text-white p-2.5 rounded-lg transition-all shadow-sm"
-                                title="Excluir Produto"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-gray-500 px-1">
+                        <div>
+                          <span className="font-semibold text-gray-400 mr-1">Cat:</span>
+                          <span className="text-gray-700">{product.categoria_nome || '—'}</span>
+                          {product.tipo_nome && (
+                            <span className="ml-1.5 text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-medium">{product.tipo_nome}</span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-400 mr-1">Loc:</span>
+                          <span className="text-gray-700">{product.localizacao || '—'}</span>
+                        </div>
+                      </div>
+
+                      {signed && (
+                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-50 mt-1">
+                          <button
+                            onClick={() => openEditModal(product)}
+                            className="flex items-center gap-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                          >
+                            <Pencil size={14} /> Editar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product.id, product.nome)}
+                            className="flex items-center gap-1 bg-red-50 text-red-400 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                          >
+                            <Trash2 size={14} /> Excluir
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       )}

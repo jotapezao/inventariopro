@@ -81,6 +81,12 @@ exports.register = async (req, res) => {
 exports.changePassword = async (req, res) => {
   const { id } = req.params;
   const { novaSenha } = req.body;
+
+  // Apenas Administradores ou o próprio usuário podem alterar a senha
+  if (req.user.tipo !== 'Administrador' && String(req.user.id) !== String(id)) {
+    return res.status(403).json({ message: 'Acesso negado. Você só pode alterar a sua própria senha.' });
+  }
+
   if (!novaSenha || novaSenha.length < 4) {
     return res.status(400).json({ message: 'A nova senha deve ter ao menos 4 caracteres.' });
   }

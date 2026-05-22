@@ -87,6 +87,12 @@ export default function Configuracoes() {
   const [loading, setLoading] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
 
+  // Estados para alteração de senha de usuário comum
+  const [selfNewPassword, setSelfNewPassword] = useState('');
+  const [selfConfirmPassword, setSelfConfirmPassword] = useState('');
+  const [showSelfPass, setShowSelfPass] = useState(false);
+  const [selfPasswordLoading, setSelfPasswordLoading] = useState(false);
+
   // Estado local do form de identidade visual
   const [localConfig, setLocalConfig] = useState({
     nome_sistema: '',
@@ -235,11 +241,80 @@ export default function Configuracoes() {
   };
 
   if (user?.tipo !== 'Administrador') {
+    const cardCls = "rounded-2xl border p-6";
+    const cardStyle = { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--card-shadow)' };
+
+    const handleSelfPasswordSubmit = async (e) => {
+      e.preventDefault();
+      if (selfNewPassword !== selfConfirmPassword) return toast.warning('As senhas não coincidem.');
+      if (selfNewPassword.length < 4) return toast.warning('A senha deve ter ao menos 4 caracteres.');
+      setSelfPasswordLoading(true);
+      try {
+        await api.put(`/auth/usuarios/${user.id}/senha`, { novaSenha: selfNewPassword });
+        toast.success('Sua senha foi alterada com sucesso!');
+        setSelfNewPassword('');
+        setSelfConfirmPassword('');
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Erro ao alterar senha.');
+      } finally { setSelfPasswordLoading(false); }
+    };
+
     return (
-      <div className="flex flex-col items-center justify-center p-16 text-center">
-        <AlertCircle size={56} className="mb-4" style={{ color: 'var(--accent)' }} />
-        <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-main)' }}>Acesso Negado</h2>
-        <p style={{ color: 'var(--text-sub)' }}>Você precisa ser um administrador para acessar as configurações.</p>
+      <div className="max-w-md mx-auto pb-12 pt-6">
+        <div className="flex items-center gap-2 mb-6">
+          <KeyRound size={28} style={{ color: 'var(--accent)' }} />
+          <h2 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--text-main)' }}>
+            Alterar Minha Senha
+          </h2>
+        </div>
+        
+        <div className={cardCls} style={cardStyle}>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-sub)' }}>
+            Olá, <span className="font-bold" style={{ color: 'var(--text-main)' }}>{user?.nome}</span>. Para a segurança da sua conta, digite a nova senha abaixo.
+          </p>
+          <form onSubmit={handleSelfPasswordSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-sub)' }}>Nova Senha</label>
+              <div className="relative">
+                <input
+                  type={showSelfPass ? 'text' : 'password'}
+                  value={selfNewPassword}
+                  onChange={e => setSelfNewPassword(e.target.value)}
+                  required
+                  placeholder="Mínimo 4 caracteres"
+                  className="input-base pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSelfPass(!showSelfPass)}
+                  className="absolute right-3 top-3 opacity-50 hover:opacity-100 transition"
+                  style={{ color: 'var(--text-main)' }}
+                >
+                  {showSelfPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-sub)' }}>Confirmar Senha</label>
+              <input
+                type={showSelfPass ? 'text' : 'password'}
+                value={selfConfirmPassword}
+                onChange={e => setSelfConfirmPassword(e.target.value)}
+                required
+                placeholder="Repita a nova senha"
+                className="input-base"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={selfPasswordLoading}
+              className="w-full text-white rounded-xl py-3 font-bold transition disabled:opacity-50 mt-2 shadow-sm hover:shadow"
+              style={{ backgroundColor: 'var(--accent)' }}
+            >
+              {selfPasswordLoading ? 'Salvando...' : 'Salvar Nova Senha'}
+            </button>
+          </form>
+        </div>
       </div>
     );
   }

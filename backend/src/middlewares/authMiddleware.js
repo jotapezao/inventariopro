@@ -13,7 +13,7 @@ exports.verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(400).json({ message: 'Token inválido.' });
+    res.status(401).json({ message: 'Token inválido ou expirado.' });
   }
 };
 
